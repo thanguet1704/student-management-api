@@ -1,0 +1,1 @@
+export { getStudents } from './StudentController';
