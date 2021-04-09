@@ -9,27 +9,39 @@ dotenv.config();
 
 export default class LoginController {
   public login = async (req: Request, res: Response) => {
-    const username = req.body.username;
-    const password = req.body.password;
 
-    const connection = await PostgresDb.getConnection();
-    const accountRepository = connection.getRepository(Account);
+    try {
+      const username = req.body.username;
+      const password = req.body.password;
 
-    const account = await accountRepository.findOne({ userCode: username });
+      const connection = await PostgresDb.getConnection();
+      const accountRepository = connection.getRepository(Account);
 
-    const isLogin = await bcrypt.compare(password, account.password);
+      const account = await accountRepository.findOne({ userCode: username });
 
-    if (isLogin) {
+      if (account) {
+        const isLogin = await bcrypt.compare(password, account.password);
 
-      const accessToken = jwt.sign({ id: account.id, name: username }, process.env.SECRET);
-      res.cookie('hcmaid', accessToken, {
-        maxAge: 365 * 24 * 60 * 60 * 100,
-        httpOnly: true,
-        // secure: true,
-      });
-      res.status(200).json({ id: account.id, name: account.name });
+        if (isLogin) {
+
+          const accessToken = jwt.sign({ id: account.id, username }, process.env.SECRET);
+          res.cookie('hcmaid', accessToken, {
+            maxAge: 365 * 24 * 60 * 60 * 100,
+            httpOnly: true,
+            // secure: true,
+          });
+
+          res.setHeader('X-HCMA-Id', accessToken);
+
+          res.status(200).json({ id: account.id, name: account.name });
+        }
+
+        res.status(400).json({ login: false });
+      } else {
+        res.status(400).json({ login: false });
+      }
+    } catch (error) {
+      res.status(500).json(error);
     }
-
-    res.status(400).json({ login: false });
   }
 }
