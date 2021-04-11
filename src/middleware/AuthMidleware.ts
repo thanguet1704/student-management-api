@@ -10,9 +10,9 @@ export const authMidlerware = async (req: Request, res: Response, next: NextFunc
 
         if (decoded) {
             next();
+        } else {
+            res.status(400).json({ message: 'Unauthorized' });
         }
-        
-        res.status(400).json({ message: 'Unauthorized' });
     } catch (error) {
         res.status(500).json(error);
     }

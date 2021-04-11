@@ -2,10 +2,11 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
-import { LoginController } from './controllers';
+import { LoginController , AuthController } from './controllers';
 import { authMidlerware } from './middleware';
 import { studentRouter } from './routers';
-import { AuthController } from './controllers';
+
+import { accountRouter } from './routers/AccountRouter';
 
 dotenv.config();
 
@@ -22,11 +23,13 @@ const loginController = new LoginController();
 const authController = new AuthController();
 
 app.post('/login', loginController.login);
+app.post('/logout', loginController.logout);
 app.post('/auth', authController.auth);
 
 app.use('/student', authMidlerware, studentRouter);
+app.use('/account', authMidlerware, accountRouter)
 
 
-app.listen(3400, () => {
+app.listen(8000, () => {
   console.log(`server start on ${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`);
 });

@@ -17,7 +17,10 @@ export default class LoginController {
       const connection = await PostgresDb.getConnection();
       const accountRepository = connection.getRepository(Account);
 
-      const account = await accountRepository.findOne({ userCode: username });
+      const account = await accountRepository.createQueryBuilder('account')
+        .innerJoinAndSelect('account.role', 'role')
+        .where({ username })
+        .getOne();
 
       if (account) {
         const isLogin = await bcrypt.compare(password, account.password);
@@ -31,9 +34,9 @@ export default class LoginController {
             // secure: true,
           });
 
-          res.setHeader('X-HCMA-Id', accessToken);
+          // res.setHeader('X-HCMA-Id', accessToken);
 
-          res.status(200).json({ id: account.id, name: account.name });
+          res.status(200).json({ id: account.id, name: account.name, role: account.role.name, token: accessToken });
         }
 
         res.status(400).json({ login: false });
@@ -43,5 +46,10 @@ export default class LoginController {
     } catch (error) {
       res.status(500).json(error);
     }
+  }
+
+  public logout = async (req: Request, res: Response) => {
+    req.cookies.hcmaid = '';
+    res.status(200).json({ message: 'ok' });
   }
 }

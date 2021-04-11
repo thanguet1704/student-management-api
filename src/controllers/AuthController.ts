@@ -1,11 +1,13 @@
 import dotenv from 'dotenv';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import PostgresDb from '../common/postgresDb';
+import { Account } from '../models';
 
 dotenv.config();
 
 export default class AuthController {
-  public auth = (req: Request, res: Response) => {
+  public auth = async (req: Request, res: Response) => {
     const accessToken = req.cookies.hcmaid;
     
     if (!accessToken) {
@@ -13,15 +15,22 @@ export default class AuthController {
     }
     
     try {
-        const decoded = jwt.verify(accessToken, process.env.SECRET);
-        console.log(typeof decoded);
-        if (typeof decoded === 'object') {
-            res.status(200).json({ isAuth: true });
+        const decoded = (jwt.verify(accessToken, process.env.SECRET)) as { id: number; name: string };
+
+        if (decoded) {
+          const connection = await PostgresDb.getConnection();
+          const accountRepository = connection.getRepository(Account);
+        
+          const account = await accountRepository.createQueryBuilder('account')
+            .innerJoinAndSelect('account.role', 'role')
+            .where({ id: decoded.id })
+            .getOne();
+          res.status(200).json({ id: account.id, name: account.name, role: account.role.name });
         }
 
         res.status(404).json({ message: 'Unauthorized' });
     } catch (error) {
-        res.status(404).json({ message: 'Unauthorized' });
+        res.status(500).json({ message: error });
     }
   }
 }
