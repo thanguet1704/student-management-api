@@ -12,7 +12,7 @@ import Account from './Account';
 import Category from './Category';
 import Class from './Class';
 
-    @Entity()
+@Entity()
 export default class Schedule extends BaseEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
@@ -31,6 +31,12 @@ export default class Schedule extends BaseEntity {
 
   @Column('int', { name: 'account_id' })
   accountId: number;
+
+  @Column('timestamp with time zone', { name: 'start_date'})
+  public startDate: Date;
+
+  @Column('timestamp with time zone', { name: 'end_date'})
+  public endDate: Date;
 
   @Column('timestamp with time zone', { name: 'deleted_at', default: null, select: false })
   public deletedAt: Date;

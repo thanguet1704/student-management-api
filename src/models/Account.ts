@@ -1,6 +1,7 @@
 import {
   BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn,
 } from 'typeorm';
+import Admin from './Admin';
 import Role from './Role';
 import Schedule from './Schedule';
 
@@ -30,8 +31,11 @@ export default class Account extends BaseEntity {
   @Column('text')
   department: string
 
-  @Column('varchar', { length: 10 })
-  class: string
+  @Column('int', { name: 'admin_id' })
+  adminId: number
+
+  @Column('varchar', { name: 'class_id', length: 10 })
+  classId: string
 
   @Column('varchar', { length: 3 })
   year: string
@@ -50,4 +54,9 @@ export default class Account extends BaseEntity {
   @OneToOne(() => Schedule,
     (schedule) => schedule.account)
   schedule: Schedule;
+
+  @ManyToOne(() => Admin,
+    admin => admin.accounts)
+  @JoinColumn({ name: 'admin_id', referencedColumnName: 'id' })
+  admin: Admin;
 }

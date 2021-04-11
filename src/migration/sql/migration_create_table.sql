@@ -51,6 +51,8 @@ CREATE TABLE schedule(
     class_id INT REFERENCES class(id),
     time TIMESTAMP WITH TIME ZONE,
     period TEXT,
+    startDate TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    endDate TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     account_id INT REFERENCES account(id),
     deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

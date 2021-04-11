@@ -1,15 +1,18 @@
 import {
-  BaseEntity, Column, Entity, OneToOne, PrimaryGeneratedColumn,
+  BaseEntity, Column, Entity, OneToOne, PrimaryGeneratedColumn
 } from 'typeorm';
 import Schedule from './Schedule';
 
-  @Entity()
+@Entity()
 export default class Category extends BaseEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
   @Column('text')
   title: string
+
+  @Column('int')
+  lesion: number;
 
   @Column('int', { name: 'subject_id' })
   subjectId: number;

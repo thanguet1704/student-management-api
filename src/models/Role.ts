@@ -1,5 +1,6 @@
 import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import Account from './Account';
+import Admin from './Admin';
 
 @Entity()
 export default class Role extends BaseEntity{
@@ -15,4 +16,8 @@ export default class Role extends BaseEntity{
   @OneToMany( () => Account,
   account => account.role)
   accounts: Account[];
+
+  @OneToMany( () => Admin,
+  admin => admin.role)
+  admins: Admin[];
 }

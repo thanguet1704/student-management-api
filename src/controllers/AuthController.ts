@@ -25,7 +25,7 @@ export default class AuthController {
             .innerJoinAndSelect('account.role', 'role')
             .where({ id: decoded.id })
             .getOne();
-          res.status(200).json({ id: account.id, name: account.name, role: account.role.name });
+          res.status(200).json({ id: account.id, name: account.name, role: account.role.name, token: accessToken });
         }
 
         res.status(404).json({ message: 'Unauthorized' });

@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import PostgresDb from '../common/postgresDb';
-import { Account } from '../models';
+import { Account, Admin } from '../models';
 
 dotenv.config();
 
@@ -34,14 +34,28 @@ export default class LoginController {
             // secure: true,
           });
 
-          // res.setHeader('X-HCMA-Id', accessToken);
-
           res.status(200).json({ id: account.id, name: account.name, role: account.role.name, token: accessToken });
         }
 
         res.status(400).json({ login: false });
       } else {
-        res.status(400).json({ login: false });
+        const adminRepository = connection.getRepository(Admin);
+        const admin = await adminRepository.createQueryBuilder('admin')
+          .innerJoinAndSelect('admin.role', 'role')
+          .where({ username })
+          .getOne();
+
+        if (admin) {
+          const accessToken = jwt.sign({ id: admin.id, username }, process.env.SECRET);
+          res.cookie('hcmaid', accessToken, {
+            maxAge: 365 * 24 * 60 * 60 * 100,
+            httpOnly: true,
+            // secure: true,
+          });
+          res.status(200).json({ id: admin.id, name: admin.name, token: accessToken });
+        } else {
+          res.status(500).json({ login: false });
+        }
       }
     } catch (error) {
       res.status(500).json(error);

@@ -1,4 +1,6 @@
 export interface IJwtDecoded {
     id: number;
-    username: string;
+    name: string;
+    role: string;
+    token: string;
 }

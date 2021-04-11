@@ -1,12 +1,12 @@
+import { scheduleRoute } from './routers/ScheduleRoute';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { LoginController , AuthController } from './controllers';
 import { authMidlerware } from './middleware';
-import { studentRouter } from './routers';
-
-import { accountRouter } from './routers/AccountRouter';
+import { studentRoute } from './routers';
+import { accountRoute } from './routers/AccountRoute';
 
 dotenv.config();
 
@@ -26,10 +26,10 @@ app.post('/login', loginController.login);
 app.post('/logout', loginController.logout);
 app.post('/auth', authController.auth);
 
-app.use('/student', authMidlerware, studentRouter);
-app.use('/account', authMidlerware, accountRouter)
+app.use('/student', authMidlerware, studentRoute);
+app.use('/account', authMidlerware, accountRoute)
+app.use('/schedule', authMidlerware, scheduleRoute)
 
-
-app.listen(8000, () => {
+app.listen(process.env.SERVER_PORT, () => {
   console.log(`server start on ${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`);
 });
