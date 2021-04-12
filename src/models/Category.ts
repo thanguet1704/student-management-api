@@ -12,12 +12,12 @@ export default class Category extends BaseEntity {
   title: string
 
   @Column('int')
-  lesion: number;
+  lession: number;
 
   @Column('int', { name: 'subject_id' })
   subjectId: number;
 
   @OneToOne(() => Schedule,
-    (schedule) => schedule.category)
+  (schedule) => schedule.category)
   schedule: Schedule;
 }

@@ -2,7 +2,9 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { Request, Response } from 'express';
 import PostgresDb from '../common/postgresDb';
-import { Account } from '../models';
+import { Account, Admin } from '../models';
+import jwt from 'jsonwebtoken';
+import { IJwtDecoded } from '../interfaces/auth';
 
 dotenv.config();
 
@@ -32,4 +34,53 @@ export default class AccountController {
 
     res.status(500).json({ message: 'Account has not existed' });
   } 
+
+  public getAccounts = async (req: Request, res: Response) => {
+    const accessToken = req.cookies.hcmaid;
+    const decoded = (jwt.verify(accessToken, process.env.SECRET)) as IJwtDecoded;
+
+    const connection = await PostgresDb.getConnection();
+    const adminRepository = connection.getRepository(Admin);
+    const admin = await adminRepository.createQueryBuilder('admin')
+      .innerJoinAndSelect('admin.role', 'role')
+      .where({ id: decoded.id })
+      .getOne();
+
+    if (admin.role.name !== 'admin') {
+      res.status(403).json({ message: 'permission denied' });
+    }
+
+    const accountRepository = connection.getRepository(Account);
+
+    const kind = req.params.kind;
+    const classHcma = req.query.classId; 
+    const search = (req.query.search) as string;
+
+    let query = accountRepository.createQueryBuilder('account')
+      .leftJoin('account.role', 'role')
+      .leftJoinAndSelect('account.class', 'class')
+      .where('role.name = :kind', { kind });
+
+    if (classHcma) {
+      query = query.andWhere('class.id = :classHcma', { classHcma });
+    }
+
+    if (search) {
+      query = query.andWhere('LOWER(account.name) like :search', { search: `%${search.toLowerCase().trim()}%` });
+    }
+
+    const accounts = await query.getMany();
+
+    const results = accounts.map(account => ({
+      id: account.id,
+      name: account.name,
+      address: account.address,
+      email: account.email,
+      phone: account.phone,
+      department: account.department,
+      class: account.class?.name,
+    }));
+
+    res.status(200).json(results);
+  }
 }

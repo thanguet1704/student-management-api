@@ -2,6 +2,7 @@ import {
   BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn,
 } from 'typeorm';
 import Admin from './Admin';
+import Class from './Class';
 import Role from './Role';
 import Schedule from './Schedule';
 
@@ -20,7 +21,7 @@ export default class Account extends BaseEntity {
   name: string
 
   @Column('text')
-  place: string
+  address: string
 
   @Column('text')
   email: string
@@ -34,10 +35,10 @@ export default class Account extends BaseEntity {
   @Column('int', { name: 'admin_id' })
   adminId: number
 
-  @Column('varchar', { name: 'class_id', length: 10 })
-  classId: string
+  @Column('varchar', { name: 'class_id' })
+  classId: number
 
-  @Column('varchar', { length: 3 })
+  @Column('varchar', { length: 10 })
   year: string
 
   @Column('int', { name: 'role_id' })
@@ -59,4 +60,9 @@ export default class Account extends BaseEntity {
     admin => admin.accounts)
   @JoinColumn({ name: 'admin_id', referencedColumnName: 'id' })
   admin: Admin;
+
+  @ManyToOne(() => Class,
+    classHcma => classHcma.accounts)
+  @JoinColumn({ name: 'class_id', referencedColumnName: 'id' })
+  class: Class;
 }
