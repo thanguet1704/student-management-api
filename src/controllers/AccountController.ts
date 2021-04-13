@@ -52,9 +52,11 @@ export default class AccountController {
 
     const accountRepository = connection.getRepository(Account);
 
-    const kind = req.params.kind;
-    const classHcma = req.query.classId; 
+    const kind = req.params.kind as string;
+    const classHcma = parseInt((req.query.classId) as string); 
     const search = (req.query.search) as string;
+    const skip = req.query.offset ? parseInt((req.query.offset) as string) : 0;
+    const take = req.query.limit ? parseInt((req.query.limit) as string) : 10;
 
     let query = accountRepository.createQueryBuilder('account')
       .leftJoin('account.role', 'role')
@@ -69,7 +71,12 @@ export default class AccountController {
       query = query.andWhere('LOWER(account.name) like :search', { search: `%${search.toLowerCase().trim()}%` });
     }
 
-    const accounts = await query.getMany();
+    const accounts = await query
+      .orderBy('account.isActive', 'DESC')
+      .addOrderBy('account.name', 'ASC')
+      .skip(skip)
+      .take(take)
+      .getMany();
 
     const results = accounts.map(account => ({
       id: account.id,
