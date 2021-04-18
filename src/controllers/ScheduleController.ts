@@ -32,8 +32,8 @@ export default class ScheduleController {
     schedule.accountId = body.accountId;
     schedule.categoryId = body.categoryId;
     schedule.classId = body.classId;
-    schedule.time = body.time;
-    schedule.period = body.period;
+    schedule.date = body.date;
+    schedule.session = body.session;
     schedule.startDate = body.startDate;
     schedule.endDate = body.endDate;
 

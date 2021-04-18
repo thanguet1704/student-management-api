@@ -84,8 +84,9 @@ export default class AccountController {
       address: account.address,
       email: account.email,
       phone: account.phone,
-      department: account.department,
+      institua: account.attendence,
       class: account.class?.name,
+      isActive: account.isActive,
     }));
 
     res.status(200).json(results);

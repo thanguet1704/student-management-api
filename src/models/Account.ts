@@ -2,6 +2,7 @@ import {
   BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn,
 } from 'typeorm';
 import Admin from './Admin';
+import Attendence from './Attendence';
 import Class from './Class';
 import Role from './Role';
 import Schedule from './Schedule';
@@ -29,8 +30,8 @@ export default class Account extends BaseEntity {
   @Column('text')
   phone: string
 
-  @Column('text')
-  department: string
+  @Column('int')
+  institua: number;
 
   @Column('int', { name: 'admin_id' })
   adminId: number
@@ -65,4 +66,8 @@ export default class Account extends BaseEntity {
     classHcma => classHcma.accounts)
   @JoinColumn({ name: 'class_id', referencedColumnName: 'id' })
   class: Class;
+
+  @OneToOne( () => Attendence,
+  attendence => attendence.account)
+  attendence: Attendence;
 }

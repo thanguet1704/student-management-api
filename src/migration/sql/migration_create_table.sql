@@ -12,7 +12,7 @@ CREATE TABLE account(
     address TEXT NOT NULL,
     email TEXT,
     phone TEXT,
-    department TEXT,
+    institua_id INT REFERENCES institua(id),
     class_id INT REFERENCES class(id),
     year VARCHAR(3),
     role_id INT NOT NULl  REFERENCES role(id),
@@ -59,25 +59,19 @@ CREATE TABLE schedule(
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 )
 
-CREATE OR REPLACE FUNCTION norm_text_latin(character varying) 
-  RETURNS character varying AS 
-$BODY$ 
-declare 
-        p_str    alias for $1; 
-        v_str    varchar; 
-begin 
-        select translate(p_str, 'ÀÁÂÃÄÅ', 'AAAAAA') into v_str; 
-        select translate(v_str, 'ÉÈËÊ', 'EEEE') into v_str; 
-        select translate(v_str, 'ÌÍÎÏ', 'IIII') into v_str; 
-        select translate(v_str, 'ÌÍÎÏ', 'IIII') into v_str; 
-        select translate(v_str, 'ÒÓÔÕÖ', 'OOOOO') into v_str; 
-        select translate(v_str, 'ÙÚÛÜ', 'UUUU') into v_str; 
-        select translate(v_str, 'àáâãäå', 'aaaaaa') into v_str; 
-        select translate(v_str, 'èéêë', 'eeee') into v_str; 
-        select translate(v_str, 'ìíîï', 'iiii') into v_str; 
-        select translate(v_str, 'òóôõö', 'ooooo') into v_str; 
-        select translate(v_str, 'ùúûü', 'uuuu') into v_str; 
-        select translate(v_str, 'Çç', 'Cc') into v_str; 
-        return v_str; 
-end;$BODY$ 
-  LANGUAGE 'plpgsql' VOLATILE; 
+CREATE TABLE attendence(
+    id SERIAL PRIMARY KEY,
+    schedule_id INT REFERENCES schedule(id),
+    student_id INT REFERENCES account(id),
+    time_in TIMESTAMP WITH TIME ZONE,
+    time_out TIMESTAMP WITH TIME ZONE,
+    deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+)
+
+
+CREATE TABLE institua(
+    id SERIAL PRIMARY KEY,
+    name TEXT
+)
