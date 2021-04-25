@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { Request, Response } from 'express';
+import csv from 'csv-parse';
 import fs from 'fs';
-import csvtojson from 'csvtojson';
 
 dotenv.config();
 
@@ -9,10 +9,11 @@ export default class AttendenceController {
   public createAttendence = async (req: Request, res: Response) => {
     let results: any[] = [];
     console.log(req.file.path);
-    csvtojson()
-      .fromFile(req.file.path)
-      .then((json) => {
-        console.log(json);
-      });
+    
+    var obj;
+    fs.readFile('file', 'utf8', function (err, data) {
+      if (err) throw err;
+      obj = JSON.parse(data);
+    });
   }
 }

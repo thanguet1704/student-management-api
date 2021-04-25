@@ -4,4 +4,6 @@ export { default as Class } from './Class';
 export { default as Category } from './Category';
 export { default as Subject } from './Subject';
 export { default as Schedule } from './Schedule';
-export { default as Admin } from './Admin';
+export { default as SchoolYear } from './SchoolYear';
+export { default as Session } from './Session';
+export { default as SubjectSchedule } from './SubjectSchedule';

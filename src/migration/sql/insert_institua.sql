@@ -1,4 +1,4 @@
-INSERT INTO public.institua(name)
+INSERT INTO institua(name)
 	VALUES ('TRIẾT HỌC'),
     ('KINH TẾ CHÍNH TRỊ HỌC'),
     ('KINH TẾ'),
@@ -17,3 +17,4 @@ INSERT INTO public.institua(name)
     ('THÔNG TIN KHOA HỌC'),
     ('TẠP CHÍ LÝ LUẬN CHÍNH TRỊ'),
     ('NHÀ XUẤT BẢN LÝ LUẬN CHÍNH TRỊ')
+    

@@ -12,17 +12,11 @@ export default class Class extends BaseEntity {
   @Column('text')
   name: string;
 
-  @Column('text', { name: 'camera_id' })
-  cameraId: string[];
-
-  @Column('varchar', { length: 10 })
-  room: string;
-
-  @OneToOne(() => Schedule,
+  @OneToMany(() => Schedule,
   (schedule) => schedule.class)
-  schedule: Schedule;
+  schedules: Schedule[];
 
   @OneToMany(() => Account,
   account => account.class)
-  accounts: Account;
+  accounts: Account[];
 }

@@ -2,17 +2,14 @@ import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 't
 import Account from './Account';
 
 @Entity()
-export default class Role extends BaseEntity{
+export default class SchoolYear extends BaseEntity{
   @PrimaryGeneratedColumn('increment')
   id: number;
 
   @Column('text')
   name: string
 
-  @Column('text')
-  ability: string[]
-
   @OneToMany( () => Account,
-  account => account.role)
+  account => account.schoolYear)
   accounts: Account[];
 }

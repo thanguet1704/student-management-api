@@ -1,18 +1,19 @@
 import {
-  BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn,
+  BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn,
 } from 'typeorm';
-import Admin from './Admin';
 import Attendence from './Attendence';
 import Class from './Class';
+import Institua from './Institua';
 import Role from './Role';
 import Schedule from './Schedule';
+import SchoolYear from './SchoolYear';
 
 @Entity()
 export default class Account extends BaseEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column('text')
+  @Column('varchar', { length: 36 })
   username: string
 
   @Column('varchar')
@@ -30,17 +31,14 @@ export default class Account extends BaseEntity {
   @Column('text')
   phone: string
 
-  @Column('int')
-  institua: number;
+  @Column('int', { name: 'institua_id' })
+  institua_id: number;
 
-  @Column('int', { name: 'admin_id' })
-  adminId: number
-
-  @Column('varchar', { name: 'class_id' })
+  @Column('int', { name: 'class_id' })
   classId: number
 
-  @Column('varchar', { length: 10 })
-  year: string
+  @Column('int', { name: 'school_year_id' })
+  schoolYearId: number;
 
   @Column('int', { name: 'role_id' })
   roleId: number
@@ -53,19 +51,24 @@ export default class Account extends BaseEntity {
   @JoinColumn({ name: 'role_id', referencedColumnName: 'id' })
   role: Role;
 
-  @OneToOne(() => Schedule,
-    (schedule) => schedule.account)
+  @OneToMany(() => Schedule,
+    (schedule) => schedule.accounts)
   schedule: Schedule;
-
-  @ManyToOne(() => Admin,
-    admin => admin.accounts)
-  @JoinColumn({ name: 'admin_id', referencedColumnName: 'id' })
-  admin: Admin;
 
   @ManyToOne(() => Class,
     classHcma => classHcma.accounts)
   @JoinColumn({ name: 'class_id', referencedColumnName: 'id' })
   class: Class;
+
+  @ManyToOne(() => SchoolYear,
+    schoolYear => schoolYear.accounts)
+  @JoinColumn({ name: 'school_year_id', referencedColumnName: 'id' })
+  schoolYear: SchoolYear;
+
+  @ManyToOne(() => Institua,
+    institua => institua.accounts)
+  @JoinColumn({ name: 'institua_id', referencedColumnName: 'id' })
+  institua: Institua;
 
   @OneToOne( () => Attendence,
   attendence => attendence.account)

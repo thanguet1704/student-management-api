@@ -1,14 +1,15 @@
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { Request, Response } from 'express';
-import PostgresDb from '../common/postgresDb';
-import { Account, Admin } from '../models';
 import jwt from 'jsonwebtoken';
+import { Repository } from 'typeorm';
+import PostgresDb from '../common/postgresDb';
 import { IJwtDecoded } from '../interfaces/auth';
+import { Account } from '../models';
 
 dotenv.config();
 
-export default class AccountController {
+export default class AccountController extends Repository<Account>{
   public updateAcountLogin = async (req: Request, res: Response) => {
     const username = req.body.username;
     const oldPassword = req.body.oldPassword;
@@ -40,28 +41,28 @@ export default class AccountController {
     const decoded = (jwt.verify(accessToken, process.env.SECRET)) as IJwtDecoded;
 
     const connection = await PostgresDb.getConnection();
-    const adminRepository = connection.getRepository(Admin);
-    const admin = await adminRepository.createQueryBuilder('admin')
-      .innerJoinAndSelect('admin.role', 'role')
-      .where({ id: decoded.id })
-      .getOne();
-
-    if (admin.role.name !== 'admin') {
-      res.status(403).json({ message: 'permission denied' });
-    }
-
     const accountRepository = connection.getRepository(Account);
 
-    const kind = req.params.kind as string;
+    const type = req.params.type as string;
     const classHcma = parseInt((req.query.classId) as string); 
     const search = (req.query.search) as string;
     const skip = req.query.offset ? parseInt((req.query.offset) as string) : 0;
     const take = req.query.limit ? parseInt((req.query.limit) as string) : 10;
 
-    let query = accountRepository.createQueryBuilder('account')
+    const admin = await this.createQueryBuilder('account')
+      .leftJoin('account.role', 'role')
+      .where({ id: decoded.id })
+      .andWhere(`role.name = 'admin'`)
+      .getOne();
+
+    if (!admin) {
+      res.status(403).json({ error: 'permission denied' });
+    }
+
+    let query = this.createQueryBuilder('account')
       .leftJoin('account.role', 'role')
       .leftJoinAndSelect('account.class', 'class')
-      .where('role.name = :kind', { kind });
+      .where('role.name = :type', { type });
 
     if (classHcma) {
       query = query.andWhere('class.id = :classHcma', { classHcma });

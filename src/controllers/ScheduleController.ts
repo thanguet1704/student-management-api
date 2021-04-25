@@ -1,45 +1,43 @@
 import dotenv from 'dotenv';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { getRepository, Repository } from 'typeorm';
 import PostgresDb from '../common/postgresDb';
 import { IJwtDecoded } from '../interfaces/auth';
 import { ICreateScheduleRequest } from '../interfaces/schedule';
-import { Account, Admin, Category, Class, Schedule, Subject } from '../models';
+import { Account, Category, Class, Schedule, Subject } from '../models';
 
 dotenv.config();
 
-export default class ScheduleController {
+export default class ScheduleController extends Repository<Schedule>{
   public createSchedule = async (req: Request, res: Response) => {
     const body: ICreateScheduleRequest = req.body;
     const accessToken = req.cookies.hcmaid;
 
     const decoded = (jwt.verify(accessToken, process.env.SECRET)) as IJwtDecoded;
 
-    const connection = await PostgresDb.getConnection();
-    const adminRepository = connection.getRepository(Admin);
-    const admin = await adminRepository.createQueryBuilder('admin')
+    const accountRepository = getRepository(Account);
+    const admin = await accountRepository.createQueryBuilder('admin')
       .innerJoinAndSelect('admin.role', 'role')
       .where({ id: decoded.id })
+      .andWhere(`role.name = 'admin'`)
       .getOne();
 
-    if (admin.role.name !== 'admin') {
+    if (admin) {
       res.status(403).json({ message: 'permission denied' });
     }
 
-    const scheduleRepository = connection.getRepository(Schedule);
-
-    const schedule = new Schedule();
-    schedule.accountId = body.accountId;
-    schedule.categoryId = body.categoryId;
-    schedule.classId = body.classId;
-    schedule.date = body.date;
-    schedule.session = body.session;
-    schedule.startDate = body.startDate;
-    schedule.endDate = body.endDate;
-
     try {
-        await scheduleRepository.save(schedule);
-        res.status(201).json({ message: 'success' });
+      const schedule = new Schedule();
+      schedule.accountId = body.accountId;
+      schedule.categoryId = body.categoryId;
+      schedule.classId = body.classId;
+      schedule.date = body.date;
+      schedule.sessionId = body.sessionId;
+      schedule.classroomId = body.classroomId;
+
+      await this.save(schedule);
+      res.status(201).json({ message: 'success' });
     } catch (error) {
         res.status(500).json(error);
     }
@@ -84,7 +82,6 @@ export default class ScheduleController {
     const results = data.map(item => ({
       id: item.id,
       title: item.name,
-      room: item.room,
     }));
 
     res.status(200).json(results)

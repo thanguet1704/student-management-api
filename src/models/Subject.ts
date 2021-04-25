@@ -1,6 +1,8 @@
 import {
-  BaseEntity, Column, Entity, PrimaryGeneratedColumn,
+  BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn
 } from 'typeorm';
+import Category from './Category';
+import SubjectSchedule from './SubjectSchedule';
 
   @Entity()
 export default class Subject extends BaseEntity {
@@ -9,4 +11,12 @@ export default class Subject extends BaseEntity {
 
     @Column('text')
     title: string;
+
+    @OneToMany(() => SubjectSchedule,
+    (subjectSchedule) => subjectSchedule.subject)
+    subjectSchedules: SubjectSchedule[];
+
+    @OneToMany(() => Category,
+    (category) => category.subject)
+    categories: Category[];
 }
