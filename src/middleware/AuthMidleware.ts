@@ -5,7 +5,6 @@ export const authMidlerware = async (req: Request, res: Response, next: NextFunc
     const authorization = req.headers['authorization'];
 
     const accessToken = authorization.slice(7);
-    console.log(accessToken);
     
     if (!accessToken) res.status(404).json({ message: 'Unauthorized' });
     

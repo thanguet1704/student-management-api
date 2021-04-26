@@ -1,7 +1,9 @@
+import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
 import { EntityRepository, Repository } from 'typeorm';
 import PostgresDb from '../common/postgresDb';
 import { Account } from '../models';
+import fs from 'fs';
 
 @EntityRepository(Account)
 export default class ClassController extends Repository<Account>{
@@ -75,6 +77,38 @@ export default class ClassController extends Repository<Account>{
         default:
             res.status(500);
     }
+  }
+
+  public updateUser = async (req: Request, res: Response) => {
+    const username = req.body.username;
+    const oldPassword = req.body.oldPassword;
+    const newPassword = req.body.newPassword;
+
+    const connection = await PostgresDb.getConnection();
+    const accountRepository = connection.getRepository(Account);
+
+    const account = await accountRepository.findOne({ username });
+
+    if (!account) {
+      res.status(500).json({ message: 'Account has not existed' });
+    }
+
+    const isLogin = await bcrypt.compare(oldPassword, account.password);
+    if (isLogin) {
+      const salt = await bcrypt.genSalt(parseInt(process.env.SALT_NUMBER));
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+      account.password = hashedPassword;
+      accountRepository.save(account);
+      res.status(201).json({ message: 'updated' });
+    }
+
+    res.status(500).json({ message: 'Account has not existed' });
+  }
+
+  public createUsers = async (req: Request, res: Response) => {
+    req.file.encoding = 'utf8';
+    const data= fs.readFileSync(req.file.path, { encoding: 'utf8'});
+    console.log(data);
   }
 }
 
