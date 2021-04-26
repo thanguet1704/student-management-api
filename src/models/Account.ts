@@ -16,7 +16,7 @@ export default class Account extends BaseEntity {
   @Column('varchar', { length: 36 })
   username: string
 
-  @Column('varchar')
+  @Column('varchar', { select: false })
   password: string
 
   @Column('text')
@@ -40,7 +40,7 @@ export default class Account extends BaseEntity {
   @Column('int', { name: 'school_year_id' })
   schoolYearId: number;
 
-  @Column('int', { name: 'role_id' })
+  @Column('int', { name: 'role_id', select: false })
   roleId: number
 
   @Column('boolean', { name: 'is_active', default: true })

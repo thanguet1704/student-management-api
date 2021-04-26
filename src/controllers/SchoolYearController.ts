@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { EntityRepository, Repository } from 'typeorm';
 import PostgresDb from '../common/postgresDb';
-import { Class, SchoolYear } from '../models';
+import { SchoolYear } from '../models';
 
 @EntityRepository(SchoolYear)
 export default class ClassController extends Repository<SchoolYear>{

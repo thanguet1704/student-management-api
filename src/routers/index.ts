@@ -1,5 +1,6 @@
-import { schoolYearRoute } from './SchoolYearRoute';
+export { userRoute } from './UserRoute';
+export { accountRoute } from './AccountRoute';
+export { schoolYearRoute } from './SchoolYearRoute';
 export { sessionRoute } from './SessionRoute';
-export { studentRoute } from './StudentRoute';
 export { attendenceRoute } from './AttendenceRoute';
 export { classRoute } from './ClassRoute';
