@@ -1,14 +1,16 @@
 import dotenv from 'dotenv';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { Repository } from 'typeorm';
 import PostgresDb from '../common/postgresDb';
 import { Account } from '../models';
 
 dotenv.config();
 
-export default class AuthController {
+export default class AuthController extends Repository<Account>{
   public auth = async (req: Request, res: Response) => {
-    const accessToken = req.cookies.hcmaid;
+    const authorization = req.headers['authorization'];
+    const accessToken = authorization.slice(7);
     
     if (!accessToken) {
         res.status(404).json({ message: 'Unauthorized' });
@@ -25,7 +27,8 @@ export default class AuthController {
             .innerJoinAndSelect('account.role', 'role')
             .where({ id: decoded.id })
             .getOne();
-          res.status(200).json({ id: account.id, name: account.name, role: account.role.name, token: accessToken });
+
+          res.status(200).json({ isAuth: true, id: decoded.id, name: decoded.name });
         }
 
         res.status(404).json({ message: 'Unauthorized' });

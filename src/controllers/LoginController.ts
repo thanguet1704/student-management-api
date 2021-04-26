@@ -19,7 +19,7 @@ export default class LoginController {
 
       const account = await accountRepository.createQueryBuilder('account')
         .innerJoinAndSelect('account.role', 'role')
-        .where({ username })
+        .where(`account.username = :username`, { username })
         .getOne();
 
       if (account) {
@@ -27,7 +27,7 @@ export default class LoginController {
 
         if (isLogin) {
 
-          const accessToken = jwt.sign({ id: account.id, username }, process.env.SECRET);
+          const accessToken = jwt.sign({ id: account.id, name: account.name }, process.env.SECRET);
           res.cookie('hcmaid', accessToken, {
             maxAge: 365 * 24 * 60 * 60 * 100,
             httpOnly: true,
