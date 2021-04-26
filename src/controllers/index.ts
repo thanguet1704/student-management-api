@@ -6,3 +6,4 @@ export { default as ScheduleController } from './ScheduleController';
 export { default as AttendenceController } from './AttendenceController';
 export { default as SessionController } from './SessionController';
 export { default as ClassController } from './ClassController';
+export { default as SchoolYearController } from './SchoolYearController';

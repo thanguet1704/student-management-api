@@ -1,3 +1,4 @@
+import { schoolYearRoute } from './routers/SchoolYearRoute';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -34,7 +35,7 @@ app.use('/schedule', authMidlerware, scheduleRoute);
 app.use('/attendence', authMidlerware, attendenceRoute);
 app.use('/sessions', authMidlerware, sessionRoute);
 app.use('/class', authMidlerware, classRoute)
-
+app.use('/schoolYears', authMidlerware, schoolYearRoute)
 
 app.listen(process.env.SERVER_PORT, () => {
   console.log(`server start on ${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`);
