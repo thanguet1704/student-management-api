@@ -106,8 +106,7 @@ export default class ClassController extends Repository<Account>{
   }
 
   public createUsers = async (req: Request, res: Response) => {
-    req.file.encoding = 'utf8';
-    const data= fs.readFileSync(req.file.path, { encoding: 'utf8'});
+    const data= fs.readFileSync('src/uploads/test1.xlsx', { encoding: 'utf8' });
     console.log(data);
   }
 }

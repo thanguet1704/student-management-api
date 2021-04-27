@@ -1,8 +1,9 @@
 import express from 'express';
-import { SessionController } from '../controllers';
+import { SubjectController } from '../controllers';
 
-export const sessionRoute = express.Router();
+export const subjectRoute = express.Router();
 
-const sessionController = new SessionController();
+const subjectController = new SubjectController();
 
-sessionRoute.get('/', sessionController.getSessions);
+subjectRoute.get('/', subjectController.getSubjects);
+subjectRoute.get('/:subjectId', subjectController.getCategories);

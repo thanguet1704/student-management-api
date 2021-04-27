@@ -75,7 +75,7 @@ export default class Schedule extends BaseEntity {
   @JoinColumn({ name: 'session_id', referencedColumnName: 'id' })
   session: Session;
 
-  @ManyToOne(() => SubjectSchedule,
+  @OneToOne(() => SubjectSchedule,
   (subjectSchedule) => subjectSchedule.schedules)
   subjectSchedule: SubjectSchedule;
 

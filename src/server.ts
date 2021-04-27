@@ -1,3 +1,4 @@
+import { subjectRoute } from './routers/SubjectRoute';
 import { userRoute } from './routers/UserRoute';
 import { schoolYearRoute } from './routers/SchoolYearRoute';
 import cookieParser from 'cookie-parser';
@@ -5,7 +6,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { AuthController, LoginController } from './controllers';
-import { authMidlerware } from './middleware';
+import { AdminPermissionMiddleware, authMidlerware } from './middleware';
 import { sessionRoute } from './routers';
 import { accountRoute } from './routers/AccountRoute';
 import { attendenceRoute } from './routers/AttendenceRoute';
@@ -35,8 +36,9 @@ app.use('/schedule', authMidlerware, scheduleRoute);
 app.use('/attendence', authMidlerware, attendenceRoute);
 app.use('/sessions', authMidlerware, sessionRoute);
 app.use('/class', authMidlerware, classRoute);
-app.use('/schoolYears', authMidlerware, schoolYearRoute);
-app.use('/users', authMidlerware, userRoute);
+app.use('/schoolYears', authMidlerware, AdminPermissionMiddleware, schoolYearRoute);
+app.use('/users', authMidlerware, AdminPermissionMiddleware, userRoute);
+app.use('/subjects', authMidlerware, AdminPermissionMiddleware, subjectRoute);
 
 app.listen(process.env.SERVER_PORT, () => {
   console.log(`server start on ${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`);

@@ -82,3 +82,12 @@ CREATE TABLE attendence(
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+CREATE TABLE subject_schedule(
+    id SERIAL PRIMARY KEY,
+    schedule_id INT REFERENCES schedule(id),
+    subject_id INT REFERENCES subject(id),
+    start_date TIMESTAMP WITH TIME ZONE,
+    end_date TIMESTAMP WITH TIME ZONE,
+    final_exam_date TIMESTAMP WITH TIME ZONE
+);

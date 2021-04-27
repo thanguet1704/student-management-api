@@ -1,30 +1,30 @@
 import {
-  BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn
+  BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn
 } from 'typeorm';
-import Subject from './Subject';
 import Schedule from './Schedule';
+import Subject from './Subject';
   
-  @Entity()
+  @Entity('subject_schedule')
   export default class SubjectSchedule extends BaseEntity {
     @PrimaryGeneratedColumn('increment')
     id: number;
   
     @Column('int', { name: 'subject_id' })
-    subjectId: string;
+    subjectId: number;
 
     @Column('int', { name: 'schedule_id' })
-    scheduleId: string;
+    scheduleId: number;
 
     @Column('date', { name: 'start_date' })
-    startDate: string;
+    startDate: Date;
 
     @Column('date', { name: 'end_date' })
-    endDate: string;
+    endDate: Date;
 
     @Column('timestamp with time zone', { name: 'final_exam_date' })
-    finalExamDate: string;
+    finalExamDate: Date;
   
-    @OneToMany(() => Schedule,
+    @OneToOne(() => Schedule,
     (schedule) => schedule.subjectSchedule)
     @JoinColumn({ name: 'schedule_id', referencedColumnName: 'id' })
     schedules: Schedule[];

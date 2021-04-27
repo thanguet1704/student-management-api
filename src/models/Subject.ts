@@ -10,7 +10,7 @@ export default class Subject extends BaseEntity {
     id: number;
 
     @Column('text')
-    title: string;
+    name: string;
 
     @OneToMany(() => SubjectSchedule,
     (subjectSchedule) => subjectSchedule.subject)

@@ -8,9 +8,8 @@ export default class SessionController extends Repository<Session>{
   public getSessions = async (req: Request, res: Response) => {
 
     const connection = await PostgresDb.getConnection();
-    const sessionRepository = getRepository(Session);
+    const sessionRepository = connection.getRepository(Session);
     const sessions = await sessionRepository.createQueryBuilder()
-      .select(['id', 'title'])
       .getMany();
 
     res.status(200).json(sessions);
