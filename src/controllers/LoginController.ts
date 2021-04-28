@@ -22,14 +22,15 @@ export default class LoginController {
         .where(`account.username = :username`, { username })
         .getOne();
 
+        console.log(account);
       if (account) {
         const isLogin = await bcrypt.compare(password, account.password);
 
         if (isLogin) {
 
-          const accessToken = jwt.sign({ id: account.id, name: account.name }, process.env.SECRET);
+          const accessToken = jwt.sign({ id: account.id, name: account.name }, process.env.SECRET, { expiresIn: '30m' });
           res.cookie('hcmaid', accessToken, {
-            maxAge: 365 * 24 * 60 * 60 * 100,
+            maxAge: 30 * 60 * 100,
             httpOnly: true,
             // secure: true,
           });
@@ -40,12 +41,8 @@ export default class LoginController {
         res.status(400).json({ login: false });
       }
     } catch (error) {
+      console.log(error);
       res.status(500).json(error);
     }
-  }
-
-  public logout = async (req: Request, res: Response) => {
-    req.cookies.hcmaid = '';
-    res.status(200).json({ message: 'ok' });
   }
 }

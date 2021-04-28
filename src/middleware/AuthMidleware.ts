@@ -9,7 +9,7 @@ export const authMidlerware = async (req: Request, res: Response, next: NextFunc
     if (!accessToken) res.status(404).json({ message: 'Unauthorized' });
     
     try {
-        const decoded = jwt.verify(accessToken, process.env.SECRET);
+        const decoded = (jwt.verify(accessToken, process.env.SECRET)) as { id: number };
 
         if (decoded) {
             next();

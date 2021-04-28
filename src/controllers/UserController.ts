@@ -9,6 +9,7 @@ import xlsx from 'xlsx';
 import Institua from '../models/Institua';
 import dotenv from 'dotenv';
 import fs from 'fs';
+import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
@@ -84,32 +85,6 @@ export default class UserController extends Repository<Account>{
         default:
             res.status(500);
     }
-  }
-
-  public updateUser = async (req: Request, res: Response) => {
-    const username = req.body.username;
-    const oldPassword = req.body.oldPassword;
-    const newPassword = req.body.newPassword;
-
-    const connection = await PostgresDb.getConnection();
-    const accountRepository = connection.getRepository(Account);
-
-    const account = await accountRepository.findOne({ username });
-
-    if (!account) {
-      res.status(500).json({ message: 'Account has not existed' });
-    }
-
-    const isLogin = await bcrypt.compare(oldPassword, account.password);
-    if (isLogin) {
-      const salt = await bcrypt.genSalt(parseInt(process.env.SALT_NUMBER));
-      const hashedPassword = await bcrypt.hash(newPassword, salt);
-      account.password = hashedPassword;
-      accountRepository.save(account);
-      res.status(201).json({ message: 'updated' });
-    }
-
-    res.status(500).json({ message: 'Account has not existed' });
   }
 
   public createUsers = async (req: Request, res: Response) => {
@@ -344,5 +319,34 @@ export default class UserController extends Repository<Account>{
       res.status(500).json({ error: error.message });
     }
   }
+
+  public updatePassword = async (req: Request, res: Response) => {
+    const authorization = req.headers['authorization'];
+    const accessToken = authorization.slice(7);
+    const decoded = (jwt.verify(accessToken, process.env.SECRET)) as { id: number };
+    const connection = await PostgresDb.getConnection();
+    const accountRepository = connection.getRepository(Account);
+
+    const account = await accountRepository.findOne({ id: decoded.id });
+
+    const username = req.body.username;
+    const oldPassword = req.body.oldPassword;
+    const newPassword = req.body.newPassword;
+
+    if (account.username !== username) {
+      res.status(400).json({ message: 'Account has not existed' });
+    }
+
+    const isLogin = await bcrypt.compare(oldPassword, account.password);
+    if (isLogin) {
+      const salt = await bcrypt.genSalt(parseInt(process.env.SALT_NUMBER));
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+      account.password = hashedPassword;
+      accountRepository.save(account);
+      res.status(201).json({ message: 'updated' });
+    }
+
+    res.status(500).json({ message: 'Account has not existed' });
+  } 
 }
 

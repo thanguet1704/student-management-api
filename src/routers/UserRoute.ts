@@ -35,5 +35,6 @@ export const userRoute = express.Router();
 const userController = new UserController();
 
 userRoute.get('/:type', userController.getUsers);
-userRoute.patch('/', userController.updateUser);
+userRoute.patch('/', userController.updatePassword);
 userRoute.post('/:type', upload.single('file'), userController.createUsers);
+
