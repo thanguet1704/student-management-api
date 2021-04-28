@@ -1,11 +1,10 @@
 import express from 'express';
-import { AttendenceController } from '../controllers';
 import multer from 'multer';
-import path from 'path';
+import { AttendenceController } from '../controllers';
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.dirname('uploads/'));
+        cb(null, 'src/uploads');
     },
     filename: (req, file, cb) => {
         cb(null, Date.now() + '--' + file.originalname);

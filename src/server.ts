@@ -1,10 +1,10 @@
-import { subjectRoute } from './routers/SubjectRoute';
-import { userRoute } from './routers/UserRoute';
-import { schoolYearRoute } from './routers/SchoolYearRoute';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import { subjectRoute } from './routers/SubjectRoute';
+import { userRoute } from './routers/UserRoute';
+import { schoolYearRoute } from './routers/SchoolYearRoute';
 import { AuthController, LoginController } from './controllers';
 import { AdminPermissionMiddleware, authMidlerware } from './middleware';
 import { sessionRoute } from './routers';
@@ -37,7 +37,7 @@ app.use('/attendence', authMidlerware, attendenceRoute);
 app.use('/sessions', authMidlerware, sessionRoute);
 app.use('/class', authMidlerware, classRoute);
 app.use('/schoolYears', authMidlerware, AdminPermissionMiddleware, schoolYearRoute);
-app.use('/users', authMidlerware, AdminPermissionMiddleware, userRoute);
+app.use('/users', authMidlerware, userRoute);
 app.use('/subjects', authMidlerware, AdminPermissionMiddleware, subjectRoute);
 
 app.listen(process.env.SERVER_PORT, () => {

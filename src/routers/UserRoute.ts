@@ -12,10 +12,23 @@ const storage = multer.diskStorage({
 });
 
 const limits = {
-    fieldSize: 1000,
+    fieldSize: 1024 * 1024 * 10,
 };
 
-const upload = multer({ storage, limits });
+const upload = multer({ 
+    storage, 
+    limits,
+    fileFilter: (req, file, cb) => {
+        const fileTypes = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        const mimetype = fileTypes.match(file.mimetype);
+
+        if (mimetype) {
+            return cb(null, true);
+        }
+
+        cb(new Error('type of file invalid'));
+    },
+});
 
 export const userRoute = express.Router();
 

@@ -87,7 +87,7 @@ CREATE TABLE subject_schedule(
     id SERIAL PRIMARY KEY,
     schedule_id INT REFERENCES schedule(id),
     subject_id INT REFERENCES subject(id),
-    start_date TIMESTAMP WITH TIME ZONE,
-    end_date TIMESTAMP WITH TIME ZONE,
+    start_date DATE,
+    end_date DATE,
     final_exam_date TIMESTAMP WITH TIME ZONE
 );

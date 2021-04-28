@@ -32,7 +32,7 @@ export default class Account extends BaseEntity {
   phone: string
 
   @Column('int', { name: 'institua_id' })
-  institua_id: number;
+  instituaId: number;
 
   @Column('int', { name: 'class_id' })
   classId: number
