@@ -9,10 +9,10 @@ export default class Session extends BaseEntity{
   @Column('text')
   title: string
 
-  @Column('time', { name: 'start_time' })
+  @Column('timestamp with time zone', { name: 'start_time' })
   startTime: string
 
-  @Column('time', { name: 'end_time' })
+  @Column('timestamp with time zone', { name: 'end_time' })
   endTime: string
 
   @OneToMany( () => Schedule,

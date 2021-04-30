@@ -1,6 +1,6 @@
 import Subject from './Subject';
 import {
-  BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn
+  BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn
 } from 'typeorm';
 import Schedule from './Schedule';
 
@@ -18,9 +18,9 @@ export default class Category extends BaseEntity {
   @Column('int', { name: 'subject_id' })
   subjectId: number;
 
-  @OneToOne(() => Schedule,
+  @OneToMany(() => Schedule,
   (schedule) => schedule.category)
-  schedule: Schedule;
+  schedules: Schedule[];
 
   @ManyToOne(() => Subject,
   (subject) => subject.categories)

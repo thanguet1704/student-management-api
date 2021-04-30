@@ -1,53 +1,55 @@
 import {
-    BaseEntity,
-    Column,
-    CreateDateColumn,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    OneToOne,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
-  } from 'typeorm';
-  import Account from './Account';
-  import Category from './Category';
-  import Class from './Class';
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  EntityRepository,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from 'typeorm';
+import Account from './Account';
 import Schedule from './Schedule';
   
-  @Entity()
-  export default class Attendence extends BaseEntity {
-    @PrimaryGeneratedColumn('increment')
-    id: number;
-  
-    @Column('int', { name: 'schedule_id' })
-    scheduleId: number;
-  
-    @Column('int', { name: 'student_id' })
-    studentId: number;
+@Entity()
+export default class Attendence extends BaseEntity {
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-    @Column('timestamp with time zone', { name: 'time_in'})
-    public timeIn: Date;
+  @Column('int', { name: 'account_id' })
+  accountId: number;
 
-    @Column('timestamp with time zone', { name: 'time_out'})
-    public timeOut: Date;
+  @Column('int', { name: 'schedule_id' })
+  scheduleId: number;
 
-    @Column('timestamp with time zone', { name: 'deleted_at', default: null })
-    public deletedAt: Date;
-  
-    @CreateDateColumn({ name: 'created_at' })
-    public createdAt: Date;
-  
-    @UpdateDateColumn({ name: 'updated_at' })
-    public updatedAt: Date;
-  
-    @ManyToOne(() => Schedule,
-    (schedule) => schedule.attendences)
-    @JoinColumn({ name: 'schedule_id', referencedColumnName: 'id' })
-    schedule: Schedule;
-  
-    @OneToOne(() => Account,
-    (account) => account.attendence)
-    @JoinColumn({ name: 'student_id', referencedColumnName: 'id' })
-    account: Account;
-  }
+  @Column('timestamp with time zone')
+  public date: string;
+
+  @Column('timestamp with time zone', { name: 'time_in'})
+  public timeIn: string;
+
+  @Column('timestamp with time zone', { name: 'time_out'})
+  public timeOut: string;
+
+  @Column('timestamp with time zone', { name: 'deleted_at', default: null })
+  public deletedAt: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  public createdAt: string;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  public updatedAt: string;
+
+  @ManyToOne(() => Schedule,
+  (schedule) => schedule.attendences)
+  @JoinColumn({ name: 'schedule_id', referencedColumnName: 'id' })
+  schedule: Schedule;
+
+  @OneToOne(() => Account,
+  (account) => account.attendence)
+  @JoinColumn({ name: 'account_id', referencedColumnName: 'id' })
+  account: Account;
+}
   

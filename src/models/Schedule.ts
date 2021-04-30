@@ -50,8 +50,8 @@ export default class Schedule extends BaseEntity {
   @UpdateDateColumn({ name: 'updated_at' })
   public updatedAt: Date;
 
-  @OneToOne(() => Category,
-  (category) => category.schedule)
+  @ManyToOne(() => Category,
+  (category) => category.schedules)
   @JoinColumn({ name: 'category_id', referencedColumnName: 'id' })
   category: Category;
 

@@ -159,6 +159,7 @@ export default class UserController extends Repository<Account>{
 
             return await transactionManager.save(student);
           } catch (error) {
+            fs.unlinkSync(req.file.path);
             res.status(500).json(error.message);
           }
         });
