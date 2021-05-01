@@ -2,6 +2,7 @@ import {
   BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn
 } from 'typeorm';
 import Account from './Account';
+import Class from './Class';
   
   @Entity()
   export default class Institua extends BaseEntity {
@@ -13,6 +14,10 @@ import Account from './Account';
   
     @OneToMany(() => Account,
     account => account.institua)
-    accounts: Account;
+    accounts: Account[];
+
+    @OneToMany(() => Class,
+    classes => classes.institua)
+    classes: Class[];
   }
   

@@ -52,8 +52,8 @@ export default class Account extends BaseEntity {
   role: Role;
 
   @OneToMany(() => Schedule,
-    (schedule) => schedule.accounts)
-  schedule: Schedule;
+    (schedule) => schedule.account)
+  schedules: Schedule[];
 
   @ManyToOne(() => Class,
     classHcma => classHcma.accounts)

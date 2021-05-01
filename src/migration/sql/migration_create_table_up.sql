@@ -1,3 +1,5 @@
+CREATE TYPE attendence_status as ENUM('attend', 'absent', 'late');
+
 CREATE TABLE role(
     id SERIAL PRIMARY KEY,
     name TEXT,
@@ -11,7 +13,9 @@ CREATE TABLE school_year(
 
 CREATE TABLE class(
     id SERIAL PRIMARY KEY,
-    name TEXT
+    name TEXT,
+    school_year_id INT REFERENCES school_year(id),
+    institua_id INT REFERENCES institua(id)
 );
 
 CREATE TABLE classroom(
@@ -78,6 +82,7 @@ CREATE TABLE attendence(
     account_id INT REFERENCES account(id),
     time_in TIMESTAMP WITH TIME ZONE,
     time_out TIMESTAMP WITH TIME ZONE,
+    status attendence_status,
     deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

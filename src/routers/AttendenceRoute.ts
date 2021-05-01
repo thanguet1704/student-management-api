@@ -1,3 +1,4 @@
+import { PrivateControllerMiddleware } from './../middleware/PrivateControllerMiddleware';
 import express from 'express';
 import multer from 'multer';
 import { AttendenceController } from '../controllers';
@@ -36,4 +37,5 @@ export const attendenceRoute = express.Router();
 const attendenceController = new AttendenceController();
 
 attendenceRoute.post('/upload', AdminPermissionMiddleware, upload.single('file') , attendenceController.createAttendence);
-attendenceRoute.get('/:studentId?', attendenceController.getAttendences);
+attendenceRoute.get('/', attendenceController.getAttendences);
+attendenceRoute.get('/attendenceStats/:schoolYearId?', PrivateControllerMiddleware, attendenceController.getAttendenceStats);

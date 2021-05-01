@@ -13,7 +13,7 @@ export default class ClassController extends Repository<SchoolYear>{
     const allSchoolYear = await schoolYearRepository.createQueryBuilder()
         .getMany();
 
-    res.status(200).json(allSchoolYear);
+    return res.status(200).json(allSchoolYear);
   }
 }
 

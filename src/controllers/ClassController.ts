@@ -19,7 +19,7 @@ export default class ClassController extends Repository<Class>{
     }
     const allClass = await query.getMany();
 
-    res.status(200).json(allClass);
+    return res.status(200).json(allClass);
   }
 }
 

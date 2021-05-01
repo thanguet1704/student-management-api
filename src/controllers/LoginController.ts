@@ -35,14 +35,14 @@ export default class LoginController {
             // secure: true,
           });
 
-          res.status(200).json({ id: account.id, name: account.name, access_token: accessToken });
+          return res.status(200).json({ id: account.id, name: account.name, access_token: accessToken });
         }
 
-        res.status(400).json({ login: false });
+        return res.status(400).json({ login: false });
       }
     } catch (error) {
       console.log(error);
-      res.status(500).json(error);
+      return res.status(500).json(error);
     }
   }
 }

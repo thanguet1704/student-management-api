@@ -1,10 +1,9 @@
+import { AttendenceStatus } from '../interfaces';
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
-  Entity,
-  EntityRepository,
-  JoinColumn,
+  Entity, JoinColumn,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -32,6 +31,9 @@ export default class Attendence extends BaseEntity {
 
   @Column('timestamp with time zone', { name: 'time_out'})
   public timeOut: string;
+
+  @Column('enum')
+  public status: AttendenceStatus;
 
   @Column('timestamp with time zone', { name: 'deleted_at', default: null })
   public deletedAt: string;

@@ -160,17 +160,17 @@ export default class UserController extends Repository<Account>{
             return await transactionManager.save(student);
           } catch (error) {
             fs.unlinkSync(req.file.path);
-            res.status(500).json(error.message);
+            return res.status(500).json(error.message);
           }
         });
       });
 
       fs.unlinkSync(req.file.path);
 
-      res.status(201).json({ message: 'success' });
+      return res.status(201).json({ message: 'success' });
     } catch (error) {
       fs.unlinkSync(req.file.path);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   }
 
@@ -178,49 +178,45 @@ export default class UserController extends Repository<Account>{
     const connection = await PostgresDb.getConnection();
     
     try {
-      await BlueBird.map(data, async account => {
-        return await connection.manager.transaction(async transactionManager => {
-          try {
-            const classRepository = connection.getRepository(Class);
-            const classDb = await classRepository.findOne({ name: account.class });
-            if (!classDb) {
-              res.status(400).json({ error: 'Invalid Class'});
-            }
-
-            const instituaRepository = connection.getRepository(Institua);
-            const institua = await instituaRepository.findOne({ name: account.institua });
-            
-            if (!institua) {
-              res.status(400).json({ error: 'Invalid Institua'});
-            }
-            
-            const salt = bcrypt.genSaltSync(Number(process.env.SALT_NUMBER));
-            const hashedPassword = (account.phone, salt);
-
-            const teacher = new Account();
-            teacher.username = account.email;
-            teacher.name = account.name;
-            teacher.address = account.address;
-            teacher.email = account.email;
-            teacher.phone = account.phone;
-            teacher.classId = classDb.id;
-            teacher.instituaId = institua.id;
-            teacher.roleId = 2;
-            teacher.password = hashedPassword;
-
-            return await transactionManager.save(teacher);
-          } catch (error) {
-            res.status(500).json(error.message);
+      await connection.manager.transaction(async transactionManager => {
+        return await BlueBird.map(data, async account => {
+          const classRepository = connection.getRepository(Class);
+          const classDb = await classRepository.findOne({ name: account.class });
+          if (!classDb) {
+            res.status(400).json({ error: 'Invalid Class'});
           }
+
+          const instituaRepository = connection.getRepository(Institua);
+          const institua = await instituaRepository.findOne({ name: account.institua });
+          
+          if (!institua) {
+            return res.status(400).json({ error: 'Invalid Institua'});
+          }
+          
+          const salt = bcrypt.genSaltSync(Number(process.env.SALT_NUMBER));
+          const hashedPassword = (account.phone, salt);
+
+          const teacher = new Account();
+          teacher.username = account.email;
+          teacher.name = account.name;
+          teacher.address = account.address;
+          teacher.email = account.email;
+          teacher.phone = account.phone;
+          teacher.classId = classDb.id;
+          teacher.instituaId = institua.id;
+          teacher.roleId = 2;
+          teacher.password = hashedPassword;
+
+          await transactionManager.save(teacher);
         });
       });
 
       fs.unlinkSync(req.file.path);
 
-      res.status(201).json({ message: 'success' });
+      return res.status(201).json({ message: 'success' });
     } catch (error) {
       fs.unlinkSync(req.file.path);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   }
 
@@ -229,7 +225,6 @@ export default class UserController extends Repository<Account>{
     
     try {
       await connection.manager.transaction(async transactionManager => {
-
         const schoolYearRepository = connection.getRepository(SchoolYear);
         const schoolYear = await schoolYearRepository.findOne({ name: body.khoa })
 
@@ -270,10 +265,10 @@ export default class UserController extends Repository<Account>{
 
       fs.unlinkSync(req.file.path);
 
-      res.status(201).json({ message: 'success' });
+      return res.status(201).json({ message: 'success' });
     } catch (error) {
       fs.unlinkSync(req.file.path);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   }
 
@@ -314,16 +309,16 @@ export default class UserController extends Repository<Account>{
 
       fs.unlinkSync(req.file.path);
 
-      res.status(201).json({ message: 'success' });
+      return res.status(201).json({ message: 'success' });
     } catch (error) {
       fs.unlinkSync(req.file.path);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   }
 
   public updatePassword = async (req: Request, res: Response) => {
     const authorization = req.headers['authorization'];
-    const accessToken = authorization.slice(7);
+    const accessToken = authorization?.slice(7);
     const decoded = (jwt.verify(accessToken, process.env.SECRET)) as { id: number };
     const connection = await PostgresDb.getConnection();
     const accountRepository = connection.getRepository(Account);
@@ -335,7 +330,7 @@ export default class UserController extends Repository<Account>{
     const newPassword = req.body.newPassword;
 
     if (account.username !== username) {
-      res.status(400).json({ message: 'Account has not existed' });
+      return res.status(400).json({ message: 'Account has not existed' });
     }
 
     const isLogin = await bcrypt.compare(oldPassword, account.password);
@@ -344,10 +339,10 @@ export default class UserController extends Repository<Account>{
       const hashedPassword = await bcrypt.hash(newPassword, salt);
       account.password = hashedPassword;
       accountRepository.save(account);
-      res.status(201).json({ message: 'updated' });
+      return res.status(201).json({ message: 'updated' });
     }
 
-    res.status(500).json({ message: 'Account has not existed' });
+    return res.status(500).json({ message: 'Account has not existed' });
   } 
 }
 

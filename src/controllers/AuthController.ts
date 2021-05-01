@@ -10,7 +10,7 @@ dotenv.config();
 export default class AuthController extends Repository<Account>{
   public auth = async (req: Request, res: Response) => {
     const authorization = req.headers['authorization'];
-    const accessToken = authorization.slice(7);
+    const accessToken = authorization?.slice(7);
     
     if (!accessToken) {
         res.status(404).json({ message: 'Unauthorized' });
@@ -31,9 +31,9 @@ export default class AuthController extends Repository<Account>{
           res.status(200).json({ isAuth: true, id: decoded.id, name: decoded.name });
         }
 
-        res.status(404).json({ message: 'Unauthorized' });
+        return res.status(404).json({ message: 'Unauthorized' });
     } catch (error) {
-        res.status(500).json({ message: error });
+        return res.status(500).json({ message: error });
     }
   }
 }

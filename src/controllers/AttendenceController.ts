@@ -1,14 +1,15 @@
 import Bluebird from 'bluebird';
 import { Request, Response } from 'express';
+import fs from 'fs';
 import jwt from 'jsonwebtoken';
-import { get } from 'lodash';
+import { get, round } from 'lodash';
 import moment from 'moment';
 import { EntityRepository, Repository } from 'typeorm';
 import xlsx from 'xlsx';
 import PostgresDb from '../common/postgresDb';
-import Attendence from '../models/Attendence';
-import fs from 'fs';
 import { Account, Category, Class, Classroom, Schedule } from '../models';
+import Attendence from '../models/Attendence';
+import { AttendenceStatus } from './../interfaces/attendence';
 
 @EntityRepository(Attendence)
 export default class AttendenceController extends Repository<Attendence>{
@@ -19,11 +20,6 @@ export default class AttendenceController extends Repository<Attendence>{
     const connection = await PostgresDb.getConnection();
 
     try {
-
-      const authorization = req.headers['authorization'];
-      const accessToken = authorization.slice(7);
-      const decoded = (jwt.verify(accessToken, process.env.SECRET)) as { id: number };
-
       await connection.manager.transaction(async transactionManager => {
         return await Bluebird.map(data, async (attendence: any) => {
           const accountRepository = connection.getRepository(Account);
@@ -55,16 +51,37 @@ export default class AttendenceController extends Repository<Attendence>{
           }
 
           const scheduleRepository = connection.getRepository(Schedule);
-          const schedule = await scheduleRepository.findOne(
-            {
+          const schedule = await scheduleRepository.createQueryBuilder('schedule')
+            .innerJoinAndSelect('schedule.session', 'session')
+            .where({
               categoryId: category.id,
               classId: classSchool.id,
               classroomId: classroom.id,
               accountId: 5,
-            }
-          );
+            })
+            .getOne();
 
-          console.log('-------------------------------------------', classSchool, classroom, decoded.id);
+          const session = schedule.session;
+
+          const timeCheckIn = moment(attendence['Thời gian vào']).set({ hours: 7, minute: 30 });
+          const startSession = moment(session.startTime);
+
+          let status;
+
+          if (!attendence['Thời gian vào'] && !attendence['Thời gian ra']) {
+            status = 'absent';
+          }
+
+          if (moment(timeCheckIn).isBefore(startSession, 'hour') || 
+            (moment(timeCheckIn).isSame(startSession, 'hour') && 
+              moment(timeCheckIn).subtract({ minute: 15 }).isBefore(startSession, 'minute'))) {
+            status = 'attend';
+          }
+
+          if (moment(timeCheckIn).isAfter(startSession, 'hour') || 
+            (moment(timeCheckIn).isSame(startSession, 'hour') && moment(timeCheckIn).isAfter(startSession, 'minute'))) {
+            status = 'late';
+          }
 
           const createAttendence = new Attendence();
           createAttendence.scheduleId = schedule.id;
@@ -72,24 +89,27 @@ export default class AttendenceController extends Repository<Attendence>{
           createAttendence.timeOut = (new Date(attendence['Thời gian ra'])).toISOString();
           createAttendence.date = (new Date(attendence['Ngày'])).toISOString();
           createAttendence.accountId = student.id;
+          createAttendence.status = status as AttendenceStatus;
           await transactionManager.save(createAttendence);
         }); 
       });
 
       fs.unlinkSync(req.file.path);
-      res.status(200).json({ message: 'success' });
+      return res.status(200).json({ message: 'success' });
     } catch (error) {
       fs.unlinkSync(req.file.path);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   }
 
   public getAttendences = async (req: Request, res: Response) => {
     const authorization = req.headers['authorization'];
-    const accessToken = authorization.slice(7);
+    const accessToken = authorization?.slice(7);
     const decoded = (jwt.verify(accessToken, process.env.SECRET)) as { id: number };
 
     const connection = await PostgresDb.getConnection();
+    const accountRepository = connection.getRepository(Account);
+    const student = await accountRepository.findOne({ id: decoded.id, roleId: 1 })
 
     const searchName: string = decodeURIComponent(`${req.query.searchName}`);
     const classIds: number[] = decodeURIComponent(`${req.query.classIds}`).split(',').map(item => Number(item));
@@ -105,13 +125,18 @@ export default class AttendenceController extends Repository<Attendence>{
       .leftJoinAndSelect('schedule.category', 'category')
       .leftJoinAndSelect('schedule.session', 'session')
       .leftJoin('schedule.class', 'class')
-      .where('attendence.date = :date', { date });
+    
+    if (date != 'undefined') {
+      query = query.where('attendence.date = :date', { date });
+    }
 
     if (classIds && classIds.filter(Boolean).length > 0) {
       query = query.andWhere('class.id IN (:...classIds)', { classIds });
     }
 
-    query = query.andWhere('account.id = :accountId', { accountId: decoded.id });
+    if (student) {
+      query = query.andWhere('account.id = :accountId', { accountId: decoded.id });
+    }
 
     if (searchName != 'undefined') {
       query = query.andWhere(`LOWER(account.name) LIKE :name`, { name: `%${searchName.toLowerCase().trim()}%` });
@@ -121,33 +146,6 @@ export default class AttendenceController extends Repository<Attendence>{
       .skip(offset).take(limit).getManyAndCount();
 
     const data = attendences.map(attendence => {
-      const timeCheckIn = moment(attendence.timeIn).set({ hours: 7, minute: 30 });
-      const timeCheckOut = attendence.timeOut;
-      const startSession = moment(attendence.schedule.session.startTime);
-        // .set({ 
-        //   years: new Date(timeCheckOut).getUTCFullYear(), 
-        //   months: new Date(timeCheckOut).getUTCMonth(),
-        //   day: new Date(timeCheckOut).getUTCDay(),
-        // });
-      const endSession = attendence.schedule.session.endTime;
-
-      let status;
-
-      if (!attendence.timeIn && !attendence.timeOut) {
-        status = 'absent';
-      }
-
-      if (moment(timeCheckIn).isBefore(startSession, 'hour') || 
-        (moment(timeCheckIn).isSame(startSession, 'hour') && 
-          moment(timeCheckIn).subtract({ minute: 15 }).isBefore(startSession, 'minute'))) {
-        status = 'attend';
-      }
-
-      if (moment(timeCheckIn).isAfter(startSession, 'hour') || 
-        (moment(timeCheckIn).isSame(startSession, 'hour') && moment(timeCheckIn).isAfter(startSession, 'minute'))) {
-        status = 'late';
-      }
-
       return {
         name: attendence.account.name,
         msv: attendence.account.username,
@@ -155,13 +153,81 @@ export default class AttendenceController extends Repository<Attendence>{
         date: attendence.schedule.date,
         timeIn: attendence.timeIn,
         timeOut: attendence.timeOut,
-        status: status,
+        status: attendence.status,
       };
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       totalPage: count,
       data,
     });
+  }
+
+  public getAttendenceStats = async (req: Request, res: Response) => {
+    const schoolYearId = Number(decodeURIComponent(`${req.query.schoolYearId}`));
+    const startDate = decodeURIComponent(`${req.query.startDate}`);
+    const endDate = decodeURIComponent(`${req.query.endDate}`);
+    const classId = Number(decodeURIComponent(`${req.query.classId}`));
+
+    const connection = await PostgresDb.getConnection();
+    const attendenceRepository = connection.getRepository(Attendence);
+
+    let query = attendenceRepository.createQueryBuilder('attendence')
+      .innerJoinAndSelect('attendence.account', 'account')
+      .innerJoinAndSelect('account.class', 'class')
+      .innerJoinAndSelect('class.schoolYear', 'schoolYear');
+
+    query = query.where('schoolYear.id = :schoolYearId', { schoolYearId });
+
+
+    if (classId) {
+      query = query.andWhere('class.id = :classId', { classId });
+    }
+
+    query = query.andWhere('attendence.date >= :startDate AND attendence.date <= :endDate', { startDate, endDate })
+
+    const allAttendence = await query.getCount();
+
+    const attendStat = await query.andWhere('attendence.status = :status', { status: 'attend'}).getCount();
+    const absentStat = await query.andWhere('attendence.status = :status', { status: 'absent'}).getCount();
+    const lateStat = await query.andWhere('attendence.status = :status', { status: 'late'}).getCount();
+
+    const stat = {
+      total: allAttendence,
+      attend: {
+        value: attendStat,
+        percent: round(attendStat / allAttendence),
+      },
+      absent: {
+        value: absentStat,
+        percent: round(absentStat / allAttendence),
+      },
+      late: {
+        value: lateStat,
+        percent: round(lateStat / allAttendence),
+      },
+    };
+
+    const classRepository = connection.getRepository(Class);
+    const chartsResponse = await classRepository.createQueryBuilder('class')
+      .innerJoinAndSelect('class.schoolYear', 'schoolYear')
+      .innerJoinAndSelect('class.accounts', 'account')
+      .innerJoinAndSelect('account.attendence', 'attendence')
+      .where('schoolYear.id = :schoolYearId', { schoolYearId })
+      .andWhere('attendence.status = :status', { status: 'attend' })
+      .getMany();
+
+    const charts = chartsResponse.map(chart => ({
+      id: chart.id,
+      name: chart.name,
+      value: chart.accounts.length,
+    }));
+
+    const result = {
+      stat,
+      charts,
+    }
+
+    return res.status(200).json(result);
   }
 }

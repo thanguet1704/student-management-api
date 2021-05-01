@@ -12,6 +12,6 @@ export default class SessionController extends Repository<Session>{
     const sessions = await sessionRepository.createQueryBuilder()
       .getMany();
 
-    res.status(200).json(sessions);
+    return res.status(200).json(sessions);
   }
 }

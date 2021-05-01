@@ -60,10 +60,10 @@ export default class Schedule extends BaseEntity {
   @JoinColumn({ name: 'class_id', referencedColumnName: 'id' })
   class: Class;
 
-  @OneToMany(() => Account,
-  (account) => account.schedule)
+  @ManyToOne(() => Account,
+  (account) => account.schedules)
   @JoinColumn({ name: 'account_id', referencedColumnName: 'id' })
-  accounts: Account[];
+  account: Account;
 
   @ManyToOne(() => Classroom,
   (classroom) => classroom.schedules)
