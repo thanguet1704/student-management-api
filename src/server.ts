@@ -12,6 +12,7 @@ import {
   schoolYearRoute,
   subjectRoute,
   userRoute,
+  classroomRoute,
 } from './routers';
 
 dotenv.config();
@@ -37,6 +38,7 @@ app.use('/class', authMidlerware, classRoute);
 app.use('/schoolYears', authMidlerware, AdminPermissionMiddleware, schoolYearRoute);
 app.use('/users', authMidlerware, userRoute);
 app.use('/subjects', authMidlerware, AdminPermissionMiddleware, subjectRoute);
+app.use('/classrooms', authMidlerware, AdminPermissionMiddleware, classroomRoute);
 
 app.listen(process.env.SERVER_PORT, () => {
   console.log(`server start on ${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`);

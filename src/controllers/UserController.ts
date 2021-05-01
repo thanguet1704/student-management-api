@@ -24,8 +24,6 @@ export default class UserController extends Repository<Account>{
     const connection = await PostgresDb.getConnection();
     const accountRepository = connection.getRepository(Account);
 
-    console.log(searchName);
-
     switch (type) {
         case 'students': {
             let query = accountRepository.createQueryBuilder('account')

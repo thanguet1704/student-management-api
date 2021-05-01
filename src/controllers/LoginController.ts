@@ -22,7 +22,6 @@ export default class LoginController {
         .where(`account.username = :username`, { username })
         .getOne();
 
-        console.log(account);
       if (account) {
         const isLogin = await bcrypt.compare(password, account.password);
 
@@ -41,7 +40,6 @@ export default class LoginController {
         return res.status(400).json({ login: false });
       }
     } catch (error) {
-      console.log(error);
       return res.status(500).json(error);
     }
   }

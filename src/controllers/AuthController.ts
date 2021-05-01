@@ -28,7 +28,7 @@ export default class AuthController extends Repository<Account>{
             .where({ id: decoded.id })
             .getOne();
 
-          res.status(200).json({ isAuth: true, id: decoded.id, name: decoded.name });
+          res.status(200).json({ isAuth: true, id: decoded.id, name: decoded.name, role: account.role.name });
         }
 
         return res.status(404).json({ message: 'Unauthorized' });
