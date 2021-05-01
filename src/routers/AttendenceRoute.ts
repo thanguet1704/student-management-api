@@ -38,4 +38,5 @@ const attendenceController = new AttendenceController();
 
 attendenceRoute.post('/upload', AdminPermissionMiddleware, upload.single('file') , attendenceController.createAttendence);
 attendenceRoute.get('/', attendenceController.getAttendences);
-attendenceRoute.get('/attendenceStats/:schoolYearId?', PrivateControllerMiddleware, attendenceController.getAttendenceStats);
+attendenceRoute.get('/attendenceStats', PrivateControllerMiddleware, attendenceController.getAttendenceStats);
+attendenceRoute.get('/topAbsent', PrivateControllerMiddleware, attendenceController.getTopAbsent);

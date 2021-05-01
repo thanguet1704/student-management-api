@@ -34,7 +34,7 @@ export default class LoginController {
             // secure: true,
           });
 
-          return res.status(200).json({ id: account.id, name: account.name, access_token: accessToken });
+          return res.status(200).json({ id: account.id, name: account.name, role: account.role.name ,access_token: accessToken });
         }
 
         return res.status(400).json({ login: false });

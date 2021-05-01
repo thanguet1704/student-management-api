@@ -158,7 +158,7 @@ export default class AttendenceController extends Repository<Attendence>{
     });
 
     return res.status(200).json({
-      totalPage: count,
+      totalPage: Math.ceil(count / limit),
       data,
     });
   }
@@ -229,5 +229,32 @@ export default class AttendenceController extends Repository<Attendence>{
     }
 
     return res.status(200).json(result);
+  }
+
+  public getTopAbsent = async (req: Request, res: Response) => {
+    const schoolYearId = Number(req.query.schoolYearId);
+    const classId = Number(req.query.classId);
+    const connection = await PostgresDb.getConnection();
+    const accountRepository = connection.getRepository(Account);
+
+    let query = accountRepository.createQueryBuilder('account')
+      .select(['account.id', 'account.name'])
+      .addSelect('COUNT(attendence.id)', 'absent')
+      .innerJoin('account.attendence', 'attendence')
+      .innerJoin('account.class', 'class')
+      .innerJoin('class.schoolYear', 'schoolYear')
+      .where({ roleId: 1, isActive: true })
+      .andWhere('schoolYear.id = :schoolYearId', { schoolYearId });
+
+    if (classId) {
+      query = query.andWhere('class.id = :classId', { classId });
+    }
+      
+    const accounts = await query.groupBy('account.id')
+      .orderBy('absent', 'DESC')
+      .limit(10)
+      .getRawMany();
+
+    return res.status(200).json(accounts);
   }
 }
