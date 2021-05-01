@@ -23,7 +23,7 @@ export default class Attendence extends BaseEntity {
   @Column('int', { name: 'schedule_id' })
   scheduleId: number;
 
-  @Column('timestamp with time zone')
+  @Column('date')
   public date: string;
 
   @Column('timestamp with time zone', { name: 'time_in'})

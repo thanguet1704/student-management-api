@@ -87,7 +87,7 @@ export default class AttendenceController extends Repository<Attendence>{
           createAttendence.scheduleId = schedule.id;
           createAttendence.timeIn = (new Date(attendence['Thời gian vào'])).toISOString();
           createAttendence.timeOut = (new Date(attendence['Thời gian ra'])).toISOString();
-          createAttendence.date = (new Date(attendence['Ngày'])).toISOString();
+          createAttendence.date = moment(new Date()).format('DD/MM/YYYY');
           createAttendence.accountId = student.id;
           createAttendence.status = status as AttendenceStatus;
           await transactionManager.save(createAttendence);
@@ -127,7 +127,7 @@ export default class AttendenceController extends Repository<Attendence>{
       .leftJoin('schedule.class', 'class')
     
     if (date != 'undefined') {
-      query = query.where('attendence.date = :date', { date });
+      query = query.where('attendence.date = :date', { date: moment(date).format('YYYY-DD-MM') });
     }
 
     if (classIds && classIds.filter(Boolean).length > 0) {
@@ -150,7 +150,7 @@ export default class AttendenceController extends Repository<Attendence>{
         name: attendence.account.name,
         msv: attendence.account.username,
         category: attendence.schedule.category.title,
-        date: attendence.schedule.date,
+        date: attendence.date,
         timeIn: attendence.timeIn,
         timeOut: attendence.timeOut,
         status: attendence.status,
