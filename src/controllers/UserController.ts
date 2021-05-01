@@ -1,15 +1,15 @@
-import { ICreateStudent, ICreateTeacher } from './../interfaces/user';
-import BlueBird from 'bluebird';
 import bcrypt from 'bcryptjs';
-import { Request, Response } from 'express';
-import { EntityRepository, Repository } from 'typeorm';
-import PostgresDb from '../common/postgresDb';
-import { Account, Class, SchoolYear } from '../models';
-import xlsx from 'xlsx';
-import Institua from '../models/Institua';
+import BlueBird from 'bluebird';
 import dotenv from 'dotenv';
+import { Request, Response } from 'express';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
+import { EntityRepository, Repository } from 'typeorm';
+import xlsx from 'xlsx';
+import PostgresDb from '../common/postgresDb';
+import { Account, Class, SchoolYear } from '../models';
+import Institua from '../models/Institua';
+import { ICreateUser, ICreateUsers } from './../interfaces/user';
 
 dotenv.config();
 
@@ -60,9 +60,9 @@ export default class UserController extends Repository<Account>{
                 .leftJoinAndSelect('account.class', 'class')
                 .leftJoinAndSelect('account.institua', 'institua')
                 .leftJoinAndSelect('account.schoolYear', 'schoolYear')
-                .where('role.name = :teacher', { teacher: 'teacher' });
+                .where('account.roleId = 2');
             
-            if (searchName) {
+            if (searchName != 'undefined') {
                 query = query.andWhere(`LOWER(account.name) LIKE '%${searchName.toLowerCase().trim()}%'`);
             }
 
@@ -85,56 +85,32 @@ export default class UserController extends Repository<Account>{
     }
   }
 
-  public createUsers = async (req: Request, res: Response) => {
+  public async createStudents(req: Request, res: Response) {
     const file = xlsx.readFile(req.file.path, { cellDates: true, cellStyles: true });
     const file1 = file.Sheets[file.SheetNames[0]];
-    const data: ICreateStudent[] | ICreateTeacher[] = xlsx.utils.sheet_to_json(file1);
+    const data = xlsx.utils.sheet_to_json(file1);
     
-    const type = req.params.type;
-    const body: ICreateStudent | ICreateTeacher = req.body.user;
-
-    switch (type) {
-      case 'students':
-        await this.createStudents(data as ICreateStudent[], req, res);
-        break;
-      
-      case 'teachers':
-        await this.createTeachers(data as ICreateTeacher[], req, res);
-        break;
-
-      case 'student':
-        await this.createStudent(body as ICreateStudent, req, res);
-
-      case 'teacher':
-        await this.createTeacher(body as ICreateTeacher, req, res);
-
-      default:
-        break;
-    }
-  }
-
-  public async createStudents(data: ICreateStudent[], req: Request, res: Response) {
     const connection = await PostgresDb.getConnection();
     
     try {
-      await BlueBird.map(data, async account => {
+      await BlueBird.map(data, async (account: any) => {
         return await connection.manager.transaction(async transactionManager => {
           try {
             const schoolYearRepository = connection.getRepository(SchoolYear);
-            const schoolYear = await schoolYearRepository.findOne({ name: account.khoa })
+            const schoolYear = await schoolYearRepository.findOne({ name: account['Khóa'] })
 
             if (!schoolYear){
               res.status(400).json({ error: 'Invalid khoa'});
             }
 
             const classRepository = connection.getRepository(Class);
-            const classDb = await classRepository.findOne({ name: account.class });
+            const classDb = await classRepository.findOne({ name: account['Lớp'] });
             if (!classDb) {
               res.status(400).json({ error: 'Invalid Class'});
             }
 
             const instituaRepository = connection.getRepository(Institua);
-            const institua = await instituaRepository.findOne({ name: account.institua });
+            const institua = await instituaRepository.findOne({ name: account['Đơn vị'] });
             
             if (!institua) {
               res.status(400).json({ error: 'Invalid Institua'});
@@ -172,20 +148,23 @@ export default class UserController extends Repository<Account>{
     }
   }
 
-  public async createTeachers(data: ICreateTeacher[], req: Request, res: Response) {
+  public async createTeachers(req: Request, res: Response) {
+    const file = xlsx.readFile(req.file.path, { cellDates: true, cellStyles: true });
+    const file1 = file.Sheets[file.SheetNames[0]];
+    const data = xlsx.utils.sheet_to_json(file1);
     const connection = await PostgresDb.getConnection();
     
     try {
       await connection.manager.transaction(async transactionManager => {
-        return await BlueBird.map(data, async account => {
+        return await BlueBird.map(data, async (account: any) => {
           const classRepository = connection.getRepository(Class);
-          const classDb = await classRepository.findOne({ name: account.class });
+          const classDb = await classRepository.findOne({ name: account['Lớp'] });
           if (!classDb) {
             res.status(400).json({ error: 'Invalid Class'});
           }
 
           const instituaRepository = connection.getRepository(Institua);
-          const institua = await instituaRepository.findOne({ name: account.institua });
+          const institua = await instituaRepository.findOne({ name: account['Đơn vị'] });
           
           if (!institua) {
             return res.status(400).json({ error: 'Invalid Institua'});
@@ -218,26 +197,27 @@ export default class UserController extends Repository<Account>{
     }
   }
 
-  public async createStudent(body: ICreateStudent, req: Request, res: Response) {
+  public async createStudent(req: Request, res: Response) {
+    const body: ICreateUser = req.body;
     const connection = await PostgresDb.getConnection();
     
     try {
       await connection.manager.transaction(async transactionManager => {
         const schoolYearRepository = connection.getRepository(SchoolYear);
-        const schoolYear = await schoolYearRepository.findOne({ name: body.khoa })
+        const schoolYear = await schoolYearRepository.findOne({ id: body.schoolYearId })
 
         if (!schoolYear){
           res.status(400).json({ error: 'Invalid khoa'});
         }
 
         const classRepository = connection.getRepository(Class);
-        const classDb = await classRepository.findOne({ name: body.class });
+        const classDb = await classRepository.findOne({ id: body.classId });
         if (!classDb) {
           res.status(400).json({ error: 'Invalid Class'});
         }
 
         const instituaRepository = connection.getRepository(Institua);
-        const institua = await instituaRepository.findOne({ name: body.institua });
+        const institua = await instituaRepository.findOne({ id: body.instituaId });
         
         if (!institua) {
           res.status(400).json({ error: 'Invalid Institua'});
@@ -261,28 +241,20 @@ export default class UserController extends Repository<Account>{
         return await transactionManager.save(student);
       });
 
-      fs.unlinkSync(req.file.path);
-
       return res.status(201).json({ message: 'success' });
     } catch (error) {
-      fs.unlinkSync(req.file.path);
       return res.status(500).json({ error: error.message });
     }
   }
 
-  public async createTeacher(body: ICreateTeacher, req: Request, res: Response) {
+  public async createTeacher(req: Request, res: Response) {
+    const body: ICreateUser = req.body;
     const connection = await PostgresDb.getConnection();
     
     try {
       await connection.manager.transaction(async transactionManager => {
-        const classRepository = connection.getRepository(Class);
-        const classDb = await classRepository.findOne({ name: body.class });
-        if (!classDb) {
-          res.status(400).json({ error: 'Invalid Class'});
-        }
-
         const instituaRepository = connection.getRepository(Institua);
-        const institua = await instituaRepository.findOne({ name: body.institua });
+        const institua = await instituaRepository.findOne({ id: body.instituaId });
         
         if (!institua) {
           res.status(400).json({ error: 'Invalid Institua'});
@@ -297,7 +269,6 @@ export default class UserController extends Repository<Account>{
         teacher.address = body.address;
         teacher.email = body.email;
         teacher.phone = body.phone;
-        teacher.classId = classDb.id;
         teacher.instituaId = institua.id;
         teacher.roleId = 2;
         teacher.password = hashedPassword;
@@ -305,11 +276,8 @@ export default class UserController extends Repository<Account>{
         return await transactionManager.save(teacher);
       });
 
-      fs.unlinkSync(req.file.path);
-
       return res.status(201).json({ message: 'success' });
     } catch (error) {
-      fs.unlinkSync(req.file.path);
       return res.status(500).json({ error: error.message });
     }
   }

@@ -36,5 +36,8 @@ const userController = new UserController();
 
 userRoute.get('/:type', userController.getUsers);
 userRoute.patch('/', userController.updatePassword);
-userRoute.post('/:type', upload.single('file'), userController.createUsers);
+userRoute.post('/students', upload.single('file'), userController.createStudents);
+userRoute.post('/teachers', upload.single('file'), userController.createTeachers);
+userRoute.post('/student', userController.createStudent);
+userRoute.post('/teacher', userController.createTeacher);
 

@@ -36,7 +36,7 @@ app.use('/attendence', authMidlerware, attendenceRoute);
 app.use('/sessions', authMidlerware, sessionRoute);
 app.use('/class', authMidlerware, classRoute);
 app.use('/schoolYears', authMidlerware, AdminPermissionMiddleware, schoolYearRoute);
-app.use('/users', authMidlerware, userRoute);
+app.use('/users', authMidlerware, AdminPermissionMiddleware, userRoute);
 app.use('/subjects', authMidlerware, AdminPermissionMiddleware, subjectRoute);
 app.use('/classrooms', authMidlerware, AdminPermissionMiddleware, classroomRoute);
 
