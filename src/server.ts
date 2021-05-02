@@ -1,18 +1,14 @@
-import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import express from 'express';
 import { AuthController, LoginController } from './controllers';
 import { AdminPermissionMiddleware, authMidlerware } from './middleware';
-import { 
-  sessionRoute,
-  attendenceRoute,
-  classRoute,
+import {
+  attendenceRoute, classroomRoute, classRoute,
   scheduleRoute,
-  schoolYearRoute,
-  subjectRoute,
-  userRoute,
-  classroomRoute,
+  schoolYearRoute, sessionRoute, subjectRoute,
+  userRoute
 } from './routers';
 
 dotenv.config();
@@ -36,7 +32,7 @@ app.use('/attendence', authMidlerware, attendenceRoute);
 app.use('/sessions', authMidlerware, sessionRoute);
 app.use('/class', authMidlerware, classRoute);
 app.use('/schoolYears', authMidlerware, AdminPermissionMiddleware, schoolYearRoute);
-app.use('/users', authMidlerware, AdminPermissionMiddleware, userRoute);
+app.use('/users', authMidlerware, userRoute);
 app.use('/subjects', authMidlerware, AdminPermissionMiddleware, subjectRoute);
 app.use('/classrooms', authMidlerware, AdminPermissionMiddleware, classroomRoute);
 

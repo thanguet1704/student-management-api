@@ -1,6 +1,7 @@
 import express from 'express';
-import { UserController } from '../controllers';
 import multer from 'multer';
+import { UserController } from '../controllers';
+import { AdminPermissionMiddleware } from '../middleware/AdminPermissionMiddleware';
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -34,10 +35,10 @@ export const userRoute = express.Router();
 
 const userController = new UserController();
 
-userRoute.get('/:type', userController.getUsers);
+userRoute.get('/:type', AdminPermissionMiddleware, userController.getUsers);
 userRoute.patch('/', userController.updatePassword);
-userRoute.post('/students', upload.single('file'), userController.createStudents);
-userRoute.post('/teachers', upload.single('file'), userController.createTeachers);
-userRoute.post('/student', userController.createStudent);
-userRoute.post('/teacher', userController.createTeacher);
+userRoute.post('/students', AdminPermissionMiddleware, upload.single('file'), userController.createStudents);
+userRoute.post('/teachers', AdminPermissionMiddleware, upload.single('file'), userController.createTeachers);
+userRoute.post('/student', AdminPermissionMiddleware, userController.createStudent);
+userRoute.post('/teacher', AdminPermissionMiddleware, userController.createTeacher);
 
