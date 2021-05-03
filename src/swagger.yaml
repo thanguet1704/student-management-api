@@ -1,0 +1,803 @@
+swagger: '2.0'
+
+info:
+  description: Tài liệu API cho Hệ thống quản lý học viên
+  version: '1.0.0'
+  title: Hệ thống quản ý Học viên
+  contact:
+    email: trinhthang1704@gmail.com
+
+schemes:
+  - http
+  - https
+
+security:
+  - Bearer: []
+
+basePath: /
+
+paths:
+  /login:
+    parameters:
+      - $ref: '#/parameters/LoginParameter'
+    post:
+      tags:
+        - login
+      summary: Sử dụng cho đăng nhập
+      x-swagger-router-controller: Login
+      operationId: login
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/LoginReponse'
+        '400':
+          description: Bad request
+            
+  /auth:
+    post:
+      tags:
+        - auth
+      summary: Sử dụng cho xác thực người dùng
+      x-swagger-router-controller: Auth
+      operationId: auth
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        '404':
+          description: Unauthorized
+          
+  /users:
+    patch:
+      tags:
+        - users
+      summary: Sử dụng cho đổi mật khẩu
+      x-swagger-router-controller: Users
+      operationId: updatePassword
+      parameters:
+      - $ref: '#/parameters/UpdatePasswordParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        
+  /users/student:
+    post:
+      tags:
+        - users
+      summary: Tạo một học viên 
+      x-swagger-router-controller: Users
+      operationId: createStudent 
+      parameters:
+      - $ref: '#/parameters/CreateStudentParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+          
+  /users/teacher:
+    post:
+      tags:
+        - users
+      summary: Tạo một giảng viên 
+      x-swagger-router-controller: Users
+      operationId: createTeacher
+      parameters:
+      - $ref: '#/parameters/CreateTeacherParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+          
+  /users/students:
+    post:
+      tags:
+        - users
+      summary: Tạo nhiều học viên  bằng  file xlsx
+      x-swagger-router-controller: Users
+      consumes:
+        - multipart/form-data
+      operationId: createStudents
+      parameters:
+      - $ref: '#/parameters/CreateStudentsParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+          
+  /users/teachers:
+    post:
+      tags:
+        - users
+      summary: Tạo nhiều giảng viên bằng file xlsx
+      x-swagger-router-controller: Users
+      operationId: createTeachers
+      consumes:
+        - multipart/form-data
+      parameters:
+      - $ref: '#/parameters/CreateTeachersParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+          
+  /users/{type}:
+    get:
+      tags:
+        - users
+      summary: Lấy danh sách học viên hoặc giảng viên
+      x-swagger-router-controller: Users
+      operationId: getUsers
+      parameters:
+      - $ref: '#/parameters/TypeParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/UsersCollection'
+        '400':
+          description: Bad Request
+          
+  /clasrooms:
+    get:
+      tags:
+        - classrooms
+      summary: Lấy danh sách phòng học
+      x-swagger-router-controller: Classrooms
+      operationId: getClassrooms
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/ClassroomsCollection'
+        '400':
+          description: Bad Request
+          
+  /clasrooms/{classroomId}/cameras:
+    get:
+      tags:
+        - classrooms
+      summary: Lấy danh sách phòng học
+      x-swagger-router-controller: Classrooms
+      operationId: getCameras
+      parameters:
+      - $ref: '#/parameters/ClassroomIdParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/ClassroomsCollection'
+        '400':
+          description: Bad Request
+
+  /class/{teacherId}:
+    get:
+      tags:
+        - class
+      summary: Lấy danh sách lớp học theo giảng viên  
+      x-swagger-router-controller: Class
+      operationId: getClass
+      parameters:
+      - $ref: '#/parameters/TeacherIdParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/ClassroomsCollection'
+        '400':
+          description: Bad Request
+
+  /schoolYears:
+    get:
+      tags:
+        - school_Years
+      summary: Lấy danh sách khóa 
+      x-swagger-router-controller: SchoolYears
+      operationId: getSchoolYears
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/ClassroomsCollection'
+        '400':
+          description: Bad Request
+          
+  /subjects:
+    get:
+      tags:
+        - subjects
+      summary: Lấy danh sách môn học
+      x-swagger-router-controller: subjects
+      operationId: getSubjects
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/ClassroomsCollection'
+        '400':
+          description: Bad Request
+          
+  /subjects/{subjectId}:
+    get:
+      tags:
+        - subjects
+      summary: Lấy danh sách chuyên đề
+      x-swagger-router-controller: subjects
+      operationId: getCategories
+      parameters:
+      - $ref: '#/parameters/SubjectIdParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/CategoriesCollection'
+        '400':
+          description: Bad Request
+          
+  /sesions:
+    get:
+      tags:
+        - sessions
+      summary: Lấy danh sách buổi học 
+      x-swagger-router-controller: Sessions
+      operationId: getSesions
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/SesionsCollection'
+        '400':
+          description: Bad Request
+      
+  /schedule:
+    post:
+      tags:
+        - schedule
+      summary: Tạo thời khóa biểu 
+      x-swagger-router-controller: Schedule
+      operationId: createSchedule
+      parameters:
+      - $ref: '#/parameters/CreateScheduleParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+    
+    get:
+      tags:
+        - schedule
+      summary: Lấy danh sách thời khóa biểu
+      x-swagger-router-controller: Schedule
+      operationId: getSchedules
+      parameters:
+      - $ref: '#/parameters/startDateParameter'
+      - $ref: '#/parameters/endDateParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/SchedulesCollection'
+        '400':
+          description: Bad Request
+          
+  /attendence/upload:
+    post:
+      tags:
+        - attendence
+      summary: Tạo dữ liệu điểm danh 
+      x-swagger-router-controller: Attendence
+      operationId: createAttendence
+      parameters:
+      - $ref: '#/parameters/CreateStudentsParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+  
+  /attendence:
+    get:
+      tags:
+        - attendence
+      summary: Lấy danh sách dữ liệu điêm danh 
+      x-swagger-router-controller: Attendence
+      operationId: getAttendences
+      parameters:
+      - $ref: '#/parameters/SearchNameParameter'
+      - $ref: '#/parameters/ClassIdsParameter'
+      - $ref: '#/parameters/DateParameter'
+      - $ref: '#/parameters/LimitParameter'
+      - $ref: '#/parameters/OffsetParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/SesionsCollection'
+        '400':
+          description: Bad Request
+          
+  /attendence/attendenceStats:
+    get:
+      tags:
+        - attendence
+      summary: Lấy chỉ số và dữ liệu biểu đồ điểm danh
+      x-swagger-router-controller: Attendence
+      operationId: getAttendenceStats
+      parameters:
+      - $ref: '#/parameters/SchoolYearIdParameter'
+      - $ref: '#/parameters/StartDateParameter'
+      - $ref: '#/parameters/EndDateParameter'
+      - $ref: '#/parameters/ClassIdParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/StatCollection'
+        '400':
+          description: Bad Request
+          
+  /attendence/topAbsent:
+    get:
+      tags:
+        - attendence
+      summary: Lấy top 10 học viên nghỉ học nhiều nhất
+      x-swagger-router-controller: Attendence
+      operationId: getTopAbsent
+      parameters:
+      - $ref: '#/parameters/SchoolYearIdParameter'
+      - $ref: '#/parameters/ClassIdParameter'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/SesionsCollection'
+        '400':
+          description: Bad Request
+          
+tags:
+  - name: login
+    description: Quản lý Đăng nhập
+    
+  - name: auth
+    description: Xác thực người dùng
+    
+  - name: users
+    description: Quản lý người dùng
+    
+  - name: classrooms
+    description: Quản lý phòng học
+    
+  - name: class
+    description: Quản lý lớp học
+  
+  - name: school_Years
+    description: Quản lý Khóa
+    
+  - name: subjects
+    description: Quản lý Môn học
+    
+  - name: sessions
+    description: Quản lý Buổi học
+    
+  - name: schedule
+    description: Quản lý thời khóa biểu 
+    
+  - name: attendence
+    description: Quản lý điểm danh
+  
+parameters:
+  SchoolYearIdParameter:
+    in: query
+    name: schoolYearId
+    type: number
+    required: true
+    
+  StartDateParameter:
+    in: query
+    name: startDate
+    type: string
+    
+  EndDateParameter:
+    in: query
+    name: endDate
+    type: string
+    
+  ClassIdParameter:
+    in: query
+    name: classId
+    type: number
+  
+  SearchNameParameter:
+    in: query 
+    name: searchName
+    type: string
+    
+  ClassIdsParameter:
+    in: query
+    name: classIds
+    type: array
+    items:
+      type: string
+      
+  DateParameter:
+    in: query
+    name: date
+    type: string
+    
+  LimitParameter:
+    in: query
+    name: limit
+    type: number
+    default: 10
+    
+  OffsetParameter:
+    in: query
+    name: offset
+    type: number
+    default: 0
+  
+  startDateParameter:
+    in: query
+    name: startDate
+    type: string
+    
+  endDateParameter:
+    in: query
+    name: endDate
+    type: string
+  
+  CreateScheduleParameter:
+    in: body
+    name: body
+    required: true
+    schema:
+      $ref: "#/definitions/CreateScheduleRequest"
+    
+  SubjectIdParameter:
+    in: path
+    name: subjectId
+    type: number
+    required: true
+  
+  TeacherIdParameter:
+    in: path
+    name: teacherId 
+    type: number
+    required: true
+  
+  ClassroomIdParameter:
+    in: path
+    name: classroomId
+    required: true
+    type: number
+
+  LoginParameter:
+    in: body
+    name: body
+    required: true
+    schema:
+      $ref: "#/definitions/LoginBody"
+      
+  UpdatePasswordParameter:
+    in: body
+    name: body
+    required: true
+    schema:
+      $ref: "#/definitions/UpdatePasswordResponse"
+      
+  CreateStudentParameter:
+    in: body
+    name: body
+    schema:
+      $ref: "#/definitions/CreateStudentResponse"
+      
+  CreateTeacherParameter:
+    in: body
+    name: body
+    schema:
+      $ref: "#/definitions/CreateTeacherResponse"
+      
+  CreateStudentsParameter:
+    in: formData
+    name: file
+    type: file
+    description: file được tải lên.
+    
+  CreateTeachersParameter:
+    in: formData
+    name: file
+    type: file
+    description: file được tải lên..
+    
+  TypeParameter:
+    in: path
+    name: type
+    required: true
+    type: string
+    enum: ['students', 'teachers']
+
+definitions:
+  StatCollection:
+    type: object
+    properties:
+      stat: 
+        type: object
+        properties:
+          total: 
+            type: number
+          attend: 
+            type: object
+            properties:
+              value:
+                type: number
+              percent:
+                type: number
+          absent: 
+            type: object
+            properties:
+              value:
+                type: number
+              percent:
+                type: number
+          late: 
+            type: object
+            properties:
+              value:
+                type: number
+              percent:
+                type: number
+      charts: 
+        type: array
+        items:
+          type: object
+          properties:
+            id: 
+              type: number
+            name: 
+              type: string
+            value:
+              type: number
+          
+  SchedulesCollection:
+    type: array
+    items:
+      type: object
+      properties:
+        subject:
+          type: string
+        class:
+          type: string
+        classroom:
+          type: string
+        date:
+          type: string
+        session:
+          type: object
+          properties:
+            title:
+              type: string
+            startTime:
+              type: string
+            endTime:
+              type: string
+        category:
+          type: string
+        lession:
+          type: string
+        teacher:
+          type: object
+          properties:
+            name:
+              type: string
+            phone:
+              type: string
+      
+  CreateScheduleRequest:
+    type: object 
+    properties:
+      subjectId:
+        type: number
+      categoryId:
+        type: number
+      classId:
+        type: number
+      learningDate:
+        type: string
+      sessionId:
+        type: number
+      accountId:
+        type: number
+      classroomId:
+        type: number
+      startDate:
+        type: string
+      endDate:
+        type: string
+      finalExamDate:
+        type: string
+  
+  SesionsCollection:
+    type: array
+    items:
+      type: object
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+  
+  CategoriesCollection:
+    type: array
+    items:
+      type: object
+      properties:
+        id: 
+          type: number
+        title:
+          type: string
+        lesion:
+          type: number
+      
+  ClassroomsCollection:
+    type: array
+    items:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+  LoginBody:
+    type: object
+    properties:
+      username:
+        type: string
+      password:
+        type: string
+        
+  LoginReponse:
+    type: object
+    properties:
+      id: 
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+      access_token:
+        type: string
+        
+  AuthResponse:
+    type: object
+    properties:
+      isAuth: 
+        type: boolean
+      id: 
+        type: number
+      name:
+        type: string
+      role: 
+        type: string
+        
+  UpdatePasswordResponse:
+    type: object
+    properties:
+      username:
+        type: string
+      oldPassword:
+        type: string
+      newPassword:
+        type: string
+        
+  CreateStudentResponse:
+    type: object
+    properties:
+      msv: 
+        type: string
+      name:
+        type: string
+      address:
+        type: string
+      email:
+        type: string
+      phone:
+        type: string
+      schoolYearId:
+        type: number
+      classId:
+        type: number
+      instituaId:
+        type: number
+        
+  CreateTeacherResponse:
+    type: object
+    properties:
+      name:
+        type: string
+      address:
+        type: string
+      email:
+        type: string
+      phone:
+        type: string
+      instituaId:
+        type: number
+        
+  UsersCollection:
+    type: array
+    items:
+      type: object
+      properties:
+        id: 
+          type: number
+        msv: 
+          type: string
+        name: 
+          type: string
+        class: 
+          type: string
+        institua:
+          type: string
+        addres:
+          type: string
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: 'Example: "Bearer ABC123"'

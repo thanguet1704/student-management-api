@@ -41,6 +41,9 @@ export default class ScheduleController extends Repository<Schedule>{
   }
 
   public getSchedules = async (req: Request, res: Response) => {
+    const startDate = decodeURIComponent(`${req.query.startDate}`);
+    const endDate = decodeURIComponent(`${req.query.endDate}`);
+
     const authorization = req.headers['authorization'];
     const accessToken = authorization?.slice(7);
     const decoded = (jwt.verify(accessToken, process.env.SECRET)) as { id: number };
@@ -48,7 +51,7 @@ export default class ScheduleController extends Repository<Schedule>{
     const connection = await PostgresDb.getConnection();
     const scheduleRepository = connection.getRepository(Schedule);
 
-    const schedules = await scheduleRepository.createQueryBuilder('schedule')
+    let query = scheduleRepository.createQueryBuilder('schedule')
       .innerJoinAndSelect('schedule.category', 'category')
       .innerJoinAndSelect('schedule.classroom', 'classroom')
       .innerJoinAndSelect('schedule.class', 'class')
@@ -58,14 +61,23 @@ export default class ScheduleController extends Repository<Schedule>{
       .innerJoinAndSelect('schedule.session', 'session')
       .innerJoin('class.accounts', 'accounts')
       .where('accounts.id = :accountId', { accountId: decoded.id })
-      .getMany();
+
+    if (startDate !== 'undefined' && endDate !== 'undefined') {
+      query = query.andWhere('schedule.date >= :startDate AND schedule.date <= :endDate', { startDate, endDate });
+    }
+
+    const schedules = await query.getMany();
 
     const result = schedules?.map(schedule => ({
       subject: schedule.category.subject.name,
       class: schedule.class.name,
       classroom: schedule.classroom.name,
       date: schedule.date,
-      session: schedule.session.title,
+      session: {
+        title: schedule.session.title,
+        startTime: schedule.session.startTime,
+        endTime: schedule.session.endTime,
+      },
       category: schedule.category.title,
       lession: schedule.category.lession,
       teacher: {

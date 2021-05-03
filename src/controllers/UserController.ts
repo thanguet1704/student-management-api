@@ -305,7 +305,7 @@ export default class UserController extends Repository<Account>{
       const hashedPassword = await bcrypt.hash(newPassword, salt);
       account.password = hashedPassword;
       accountRepository.save(account);
-      return res.status(201).json({ message: 'updated' });
+      return res.status(200).json();
     }
 
     return res.status(500).json({ message: 'Account has not existed' });

@@ -39,7 +39,7 @@ export default class LoginController {
         return res.status(400).json({ login: false });
       }
 
-      return res.status(500).json({ login: false });
+      return res.status(400).json({ login: false });
     } catch (error) {
       return res.status(500).json(error);
     }

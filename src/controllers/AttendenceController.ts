@@ -184,7 +184,9 @@ export default class AttendenceController extends Repository<Attendence>{
       query = query.andWhere('class.id = :classId', { classId });
     }
 
-    query = query.andWhere('attendence.date >= :startDate AND attendence.date <= :endDate', { startDate, endDate })
+    if (startDate != 'undefined' && endDate != 'undefined') {
+      query = query.andWhere('attendence.date >= :startDate AND attendence.date <= :endDate', { startDate, endDate })
+    }
 
     const allAttendence = await query.getCount();
 
