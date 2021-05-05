@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { AuthController, LoginController } from './controllers';
-import { AdminPermissionMiddleware, authMidlerware } from './middleware';
+import { AdminPermissionMiddleware, authMidlerware, PrivateControllerMiddleware } from './middleware';
 import {
   attendenceRoute, classroomRoute, classRoute,
   scheduleRoute,
@@ -31,7 +31,7 @@ app.use('/schedule', authMidlerware, scheduleRoute);
 app.use('/attendence', authMidlerware, attendenceRoute);
 app.use('/sessions', authMidlerware, sessionRoute);
 app.use('/class', authMidlerware, classRoute);
-app.use('/schoolYears', authMidlerware, AdminPermissionMiddleware, schoolYearRoute);
+app.use('/schoolYears', authMidlerware, PrivateControllerMiddleware, schoolYearRoute);
 app.use('/users', authMidlerware, userRoute);
 app.use('/subjects', authMidlerware, AdminPermissionMiddleware, subjectRoute);
 app.use('/classrooms', authMidlerware, AdminPermissionMiddleware, classroomRoute);

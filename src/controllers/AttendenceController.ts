@@ -164,7 +164,7 @@ export default class AttendenceController extends Repository<Attendence>{
   }
 
   public getAttendenceStats = async (req: Request, res: Response) => {
-    const schoolYearId = Number(decodeURIComponent(`${req.query.schoolYearId}`));
+    const schoolYearId = decodeURIComponent(`${req.query.schoolYearId}`);
     const startDate = decodeURIComponent(`${req.query.startDate}`);
     const endDate = decodeURIComponent(`${req.query.endDate}`);
     const classId = Number(decodeURIComponent(`${req.query.classId}`));
@@ -177,10 +177,10 @@ export default class AttendenceController extends Repository<Attendence>{
       .innerJoinAndSelect('account.class', 'class')
       .innerJoinAndSelect('class.schoolYear', 'schoolYear');
 
-    query = query.where('schoolYear.id = :schoolYearId', { schoolYearId });
+    query = query.where('schoolYear.id = :schoolYearId', { schoolYearId: Number(schoolYearId) });
 
 
-    if (classId) {
+    if (!Number.isNaN(classId)) {
       query = query.andWhere('class.id = :classId', { classId });
     }
 
