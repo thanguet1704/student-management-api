@@ -13,7 +13,7 @@ export default class AuthController extends Repository<Account>{
     const accessToken = authorization?.slice(7);
     
     if (!accessToken) {
-        res.status(404).json({ message: 'Unauthorized' });
+      return res.status(401).json({ message: 'Unauthorized' });
     }
     
     try {
@@ -31,9 +31,9 @@ export default class AuthController extends Repository<Account>{
           return res.status(200).json({ isAuth: true, id: decoded.id, name: decoded.name, role: account.role.name });
         }
 
-        return res.status(404).json({ message: 'Unauthorized' });
+        return res.status(401).json({ message: 'Unauthorized' });
     } catch (error) {
-        return res.status(500).json({ message: error });
+        return res.status(401).json({ message: 'Unauthorized' });
     }
   }
 }

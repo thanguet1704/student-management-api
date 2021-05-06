@@ -19,7 +19,6 @@ export default class UserController extends Repository<Account>{
 
     const type = req.params.type;
     const searchName = decodeURIComponent(`${req.query.search}`);
-    const classId = decodeURIComponent(`${req.query.classId}`).split(',').map(id => Number(id));
 
     const connection = await PostgresDb.getConnection();
     const accountRepository = connection.getRepository(Account);
@@ -32,16 +31,15 @@ export default class UserController extends Repository<Account>{
                 .leftJoinAndSelect('account.institua', 'institua')
                 .leftJoinAndSelect('account.schoolYear', 'schoolYear')
                 .where('role.name = :student', { student: 'student' });
+
+            console.log(searchName);
             
             if (searchName != 'undefined') {
                 query = query.andWhere(`LOWER(account.name) LIKE '%${searchName.toLowerCase().trim()}%'`);
             }
 
-            if (classId && classId.filter(Boolean).length !== 0) {
-                query = query.andWhere(`account.classId IN (:...classId)`, { classId: classId.filter(Boolean) });
-            }
-
-            const students = await query.getMany();
+            const [students, count] = await query.orderBy('class.id', 'ASC')
+              .getManyAndCount();
             const results = students.map(student => ({
                 id: student.id,
                 msv: student.username,
@@ -49,8 +47,9 @@ export default class UserController extends Repository<Account>{
                 class: student.class.name,
                 institua: student.institua.name,
                 address: student.address,
+                isActive: student.isActive,
             }));
-            res.status(200).json(results);
+            res.status(200).json({ totalPage: count, data: results });
             break;
         }
 
@@ -66,7 +65,7 @@ export default class UserController extends Repository<Account>{
                 query = query.andWhere(`LOWER(account.name) LIKE '%${searchName.toLowerCase().trim()}%'`);
             }
 
-            const teachers = await query.getMany();
+            const [teachers, count] = await query.getManyAndCount();
 
             const results = teachers.map(teacher => ({
                 id: teacher.id,
@@ -74,9 +73,10 @@ export default class UserController extends Repository<Account>{
                 institua: teacher.institua.name,
                 email: teacher.email,
                 phone: teacher.phone,
+                address: teacher.address,
             }));
 
-            res.status(200).json(results);
+            res.status(200).json({ totalPage:  count, data: results });
             break;
         }
             

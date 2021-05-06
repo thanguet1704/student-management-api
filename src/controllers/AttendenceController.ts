@@ -18,6 +18,7 @@ export default class AttendenceController extends Repository<Attendence>{
     const file1 = file.Sheets[file.SheetNames[0]];
     const data = xlsx.utils.sheet_to_json(file1);
     const connection = await PostgresDb.getConnection();
+    const date = moment(new Date(`${req.query.date}`)).format('YYYY-MM-DD');
 
     try {
       await connection.manager.transaction(async transactionManager => {
@@ -87,7 +88,7 @@ export default class AttendenceController extends Repository<Attendence>{
           createAttendence.scheduleId = schedule.id;
           createAttendence.timeIn = (new Date(attendence['Thời gian vào'])).toISOString();
           createAttendence.timeOut = (new Date(attendence['Thời gian ra'])).toISOString();
-          createAttendence.date = moment(new Date()).format('DD/MM/YYYY');
+          createAttendence.date = date;
           createAttendence.accountId = student.id;
           createAttendence.status = status as AttendenceStatus;
           await transactionManager.save(createAttendence);
@@ -113,7 +114,7 @@ export default class AttendenceController extends Repository<Attendence>{
 
     const searchName: string = decodeURIComponent(`${req.query.searchName}`);
     const classIds: number[] = decodeURIComponent(`${req.query.classIds}`).split(',').map(item => Number(item));
-    const date: string = decodeURIComponent(`${req.query.date}`);
+    const date = moment(`${req.query.date}`).format('YYYY-MM-DD');
     const limit: number = Number(get(req.query, 'limit', 10));
     const offset: number = Number(get(req.query, 'offset', 0));
     
@@ -126,9 +127,7 @@ export default class AttendenceController extends Repository<Attendence>{
       .leftJoinAndSelect('schedule.session', 'session')
       .leftJoin('schedule.class', 'class')
     
-    if (date != 'undefined') {
-      query = query.where('attendence.date = :date', { date: moment(date).format('YYYY-DD-MM') });
-    }
+    query = query.where('attendence.date = :date', { date });
 
     if (classIds && classIds.filter(Boolean).length > 0) {
       query = query.andWhere('class.id IN (:...classIds)', { classIds });
@@ -195,7 +194,9 @@ export default class AttendenceController extends Repository<Attendence>{
     const lateStat = await query.andWhere('attendence.status = :status', { status: 'late'}).getCount();
 
     const stat = {
-      total: allAttendence,
+      total: {
+        value: allAttendence
+      },
       attend: {
         value: attendStat,
         percent: round(attendStat / allAttendence),
