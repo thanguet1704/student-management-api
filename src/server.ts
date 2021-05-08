@@ -3,11 +3,20 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { AuthController, LoginController } from './controllers';
-import { AdminPermissionMiddleware, authMidlerware, PrivateControllerMiddleware } from './middleware';
+import { 
+  AdminPermissionMiddleware, 
+  authMidlerware, 
+  PrivateControllerMiddleware 
+} from './middleware';
 import {
-  attendenceRoute, classroomRoute, classRoute,
+  attendenceRoute, 
+  classroomRoute, 
+  classRoute,
   scheduleRoute,
-  schoolYearRoute, sessionRoute, subjectRoute,
+  schoolYearRoute, 
+  semesterRoute, 
+  sessionRoute, 
+  subjectRoute,
   userRoute
 } from './routers';
 
@@ -35,6 +44,7 @@ app.use('/schoolYears', authMidlerware, PrivateControllerMiddleware, schoolYearR
 app.use('/users', authMidlerware, userRoute);
 app.use('/subjects', authMidlerware, AdminPermissionMiddleware, subjectRoute);
 app.use('/classrooms', authMidlerware, AdminPermissionMiddleware, classroomRoute);
+app.use('/semesters', authMidlerware, semesterRoute);
 
 app.listen(process.env.SERVER_PORT, () => {
   console.log(`server start on ${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`);

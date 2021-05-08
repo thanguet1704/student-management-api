@@ -15,6 +15,7 @@ import Attendence from './Attendence';
 import Category from './Category';
 import Class from './Class';
 import Classroom from './Classroom';
+import Semester from './Semester';
 import Session from './Session';
 import SubjectSchedule from './SubjectSchedule';
 
@@ -40,6 +41,9 @@ export default class Schedule extends BaseEntity {
 
   @Column('int', { name: 'account_id' })
   accountId: number;
+
+  @Column('int', { name: 'semester_id' })
+  semesterId: number;
 
   @Column('timestamp with time zone', { name: 'deleted_at', default: null })
   public deletedAt: Date;
@@ -82,4 +86,9 @@ export default class Schedule extends BaseEntity {
   @OneToMany( () => Attendence,
   (attendence) => attendence.schedule)
   attendences: Attendence[];
+
+  @ManyToOne(() => Semester,
+  semester => semester.schedules)
+  @JoinColumn({ name: 'semester_id', referencedColumnName: 'id' })
+  semester: Semester;
 }

@@ -18,7 +18,6 @@ export default class AttendenceController extends Repository<Attendence>{
     const file1 = file.Sheets[file.SheetNames[0]];
     const data = xlsx.utils.sheet_to_json(file1);
     const connection = await PostgresDb.getConnection();
-    const date = moment(new Date(`${req.query.date}`)).format('YYYY-MM-DD');
 
     try {
       await connection.manager.transaction(async transactionManager => {
@@ -88,7 +87,7 @@ export default class AttendenceController extends Repository<Attendence>{
           createAttendence.scheduleId = schedule.id;
           createAttendence.timeIn = (new Date(attendence['Thời gian vào'])).toISOString();
           createAttendence.timeOut = (new Date(attendence['Thời gian ra'])).toISOString();
-          createAttendence.date = date;
+          createAttendence.date = (new Date(attendence['Ngày'])).toISOString();;
           createAttendence.accountId = student.id;
           createAttendence.status = status as AttendenceStatus;
           await transactionManager.save(createAttendence);
@@ -114,31 +113,35 @@ export default class AttendenceController extends Repository<Attendence>{
 
     const searchName: string = decodeURIComponent(`${req.query.searchName}`);
     const classIds: number[] = decodeURIComponent(`${req.query.classIds}`).split(',').map(item => Number(item));
-    const date = moment(`${req.query.date}`).format('YYYY-MM-DD');
+    const date = decodeURIComponent(`${req.query.date}`);
     const limit: number = Number(get(req.query, 'limit', 10));
     const offset: number = Number(get(req.query, 'offset', 0));
     
     const attendenceRepository = connection.getRepository(Attendence);
     
     let query = attendenceRepository.createQueryBuilder('attendence')
-      .leftJoinAndSelect('attendence.account', 'account')
-      .leftJoinAndSelect('attendence.schedule', 'schedule')
-      .leftJoinAndSelect('schedule.category', 'category')
-      .leftJoinAndSelect('schedule.session', 'session')
-      .leftJoin('schedule.class', 'class')
+      .innerJoinAndSelect('attendence.account', 'account')
+      .innerJoinAndSelect('attendence.schedule', 'schedule')
+      .innerJoinAndSelect('schedule.category', 'category')
+      .innerJoinAndSelect('schedule.session', 'session')
+      .innerJoin('schedule.class', 'class')
     
-    query = query.where('attendence.date = :date', { date });
-
+    if (!student) {
+      query = query.where('attendence.date = :date', { date });
+    }
+  
     if (classIds && classIds.filter(Boolean).length > 0) {
       query = query.andWhere('class.id IN (:...classIds)', { classIds });
     }
 
+    console.log('--------------------', decoded.id);
     if (student) {
       query = query.andWhere('account.id = :accountId', { accountId: decoded.id });
     }
 
-    if (searchName != 'undefined') {
-      query = query.andWhere(`LOWER(account.name) LIKE :name`, { name: `%${searchName.toLowerCase().trim()}%` });
+    if (searchName != 'undefined' && Boolean(searchName)) {
+      query = query.andWhere(`LOWER(account.name) LIKE :name OR LOWER(category.title) LIKE :name`, 
+        { name: `%${searchName.toLowerCase().trim()}%` });
     }
 
     const [attendences, count] = await query.orderBy('attendence.date', 'DESC')
@@ -183,7 +186,7 @@ export default class AttendenceController extends Repository<Attendence>{
       query = query.andWhere('class.id = :classId', { classId });
     }
 
-    if (startDate != 'undefined' && endDate != 'undefined') {
+    if (startDate != 'undefined' && endDate != 'undefined' && Boolean(startDate) && Boolean(endDate)) {
       query = query.andWhere('attendence.date >= :startDate AND attendence.date <= :endDate', { startDate, endDate })
     }
 

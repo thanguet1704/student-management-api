@@ -71,6 +71,7 @@ CREATE TABLE schedule(
     account_id INT REFERENCES account(id),
     date TIMESTAMP WITH TIME ZONE,
     session_id INT REFERENCES session(id),
+    semester_id INT REFERENCES semester(id),
     deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -96,3 +97,10 @@ CREATE TABLE subject_schedule(
     end_date DATE,
     final_exam_date TIMESTAMP WITH TIME ZONE
 );
+
+CREATE TABLE semester (
+    id SERIAL PRIMARY KEY,
+    name TEXT,
+    start_date TEXT,
+    end_date TEXT
+)
