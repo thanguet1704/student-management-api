@@ -38,8 +38,8 @@ app.post('/auth', authController.auth);
 
 app.use('/schedule', authMidlerware, scheduleRoute);
 app.use('/attendence', authMidlerware, attendenceRoute);
-app.use('/sessions', authMidlerware, sessionRoute);
-app.use('/class', authMidlerware, classRoute);
+app.use('/sessions', authMidlerware, PrivateControllerMiddleware, sessionRoute);
+app.use('/class', authMidlerware, PrivateControllerMiddleware, classRoute);
 app.use('/schoolYears', authMidlerware, PrivateControllerMiddleware, schoolYearRoute);
 app.use('/users', authMidlerware, userRoute);
 app.use('/subjects', authMidlerware, AdminPermissionMiddleware, subjectRoute);

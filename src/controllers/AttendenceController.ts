@@ -170,6 +170,7 @@ export default class AttendenceController extends Repository<Attendence>{
     const startDate = decodeURIComponent(`${req.query.startDate}`);
     const endDate = decodeURIComponent(`${req.query.endDate}`);
     const classId = Number(decodeURIComponent(`${req.query.classId}`));
+    const semesterId = Number(decodeURIComponent(`${req.query.semesterId}`));
 
     const connection = await PostgresDb.getConnection();
     const attendenceRepository = connection.getRepository(Attendence);
@@ -177,9 +178,12 @@ export default class AttendenceController extends Repository<Attendence>{
     let query = attendenceRepository.createQueryBuilder('attendence')
       .innerJoinAndSelect('attendence.account', 'account')
       .innerJoinAndSelect('account.class', 'class')
-      .innerJoinAndSelect('class.schoolYear', 'schoolYear');
+      .innerJoinAndSelect('class.schoolYear', 'schoolYear')
+      .innerJoinAndSelect('attendence.schedule', 'schedule')
+      .innerJoinAndSelect('schedule.semester', 'semester');
 
-    query = query.where('schoolYear.id = :schoolYearId', { schoolYearId: Number(schoolYearId) });
+    query = query.where('schoolYear.id = :schoolYearId', { schoolYearId: Number(schoolYearId) })
+      .andWhere('semester.id = :semesterId', { semesterId });
 
 
     if (!Number.isNaN(classId)) {
@@ -215,18 +219,28 @@ export default class AttendenceController extends Repository<Attendence>{
     };
 
     const classRepository = connection.getRepository(Class);
-    const chartsResponse = await classRepository.createQueryBuilder('class')
-      .innerJoinAndSelect('class.schoolYear', 'schoolYear')
-      .innerJoinAndSelect('class.accounts', 'account')
-      .innerJoinAndSelect('account.attendence', 'attendence')
-      .where('schoolYear.id = :schoolYearId', { schoolYearId })
-      .andWhere('attendence.status = :status', { status: 'attend' })
-      .getMany();
+    const chartsResponse = (await classRepository.query(
+      `SELECT distinct(class.id) AS id,
+        class.name AS name,
+        COALESCE (COUNT(attendence.status) FILTER ( where attendence.status = 'attend' )) AS attend,
+        COALESCE (COUNT(attendence.status) FILTER ( where attendence.status = 'absent' )) AS absent,
+        COALESCE (COUNT(attendence.status) FILTER ( where attendence.status = 'late' )) AS late
+      FROM class 
+      INNER JOIN school_year  ON school_year.id = class.school_year_id
+      INNER JOIN account  ON account.class_id=class.id
+      INNER JOIN attendence ON attendence.account_id=account.id
+      INNER JOIN schedule ON attendence.schedule_id=schedule.id
+      INNER JOIN semester ON schedule.semester_id=semester.id
+      WHERE school_year.id = ${schoolYearId} AND semester.id = ${semesterId}
+      GROUP BY class.id`
+    )) as {id: number, name: string, attend: number, absent: number, late: number}[];
 
     const charts = chartsResponse.map(chart => ({
       id: chart.id,
       name: chart.name,
-      value: chart.accounts.length,
+      attend: chart.attend,
+      absent: chart.absent,
+      late: chart.late,
     }));
 
     const result = {
