@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({
   origin: `http://${process.env.CORS_HOST}:${process.env.CORS_PORT}`,
-  credentials: true
+  credentials: true,
 }));
 
 const loginController = new LoginController();

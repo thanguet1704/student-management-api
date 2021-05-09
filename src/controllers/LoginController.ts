@@ -32,6 +32,12 @@ export default class LoginController {
             // httpOnly: true,
             // secure: true,
           });
+          res.cookie('name', account.name, {
+          });
+
+          res.cookie('role', account.role.name, {
+            maxAge: 10 * 30 * 60 * 100,
+          });
 
           return res.status(200).json({ id: account.id, name: account.name, role: account.role.name ,access_token: accessToken });
         }
