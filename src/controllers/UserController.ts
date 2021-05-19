@@ -19,69 +19,71 @@ export default class UserController extends Repository<Account>{
 
     const type = req.params.type;
     const searchName = decodeURIComponent(`${req.query.search}`);
+    const limit = Number(req.query.limit) || 0;
+    const offset = Number(req.query.offset) || 0;
 
     const connection = await PostgresDb.getConnection();
     const accountRepository = connection.getRepository(Account);
 
     switch (type) {
-        case 'students': {
-            let query = accountRepository.createQueryBuilder('account')
-                .leftJoin('account.role', 'role')
-                .leftJoinAndSelect('account.class', 'class')
-                .leftJoinAndSelect('account.institua', 'institua')
-                .leftJoinAndSelect('account.schoolYear', 'schoolYear')
-                .where('role.name = :student', { student: 'student' });
+      case 'students': {
+          let query = accountRepository.createQueryBuilder('account')
+            .leftJoin('account.role', 'role')
+            .leftJoinAndSelect('account.class', 'class')
+            .leftJoinAndSelect('account.institua', 'institua')
+            .leftJoinAndSelect('account.schoolYear', 'schoolYear')
+            .where('role.name = :student', { student: 'student' });
+          
+          if (searchName != 'undefined') {
+            query = query.andWhere(`LOWER(account.name) LIKE '%${searchName.toLowerCase().trim()}%'`);
+          }
 
-            console.log(searchName);
-            
-            if (searchName != 'undefined') {
-                query = query.andWhere(`LOWER(account.name) LIKE '%${searchName.toLowerCase().trim()}%'`);
-            }
+          const [students, count] = await query.orderBy('account.isActive', 'DESC')
+            .addOrderBy('account.classId', 'ASC')
+            .skip(offset)
+            .take(limit)
+            .getManyAndCount();
 
-            const [students, count] = await query.orderBy('class.id', 'ASC')
-              .getManyAndCount();
-            const results = students.map(student => ({
-                id: student.id,
-                msv: student.username,
-                name: student.name,
-                class: student.class.name,
-                institua: student.institua.name,
-                address: student.address,
-                isActive: student.isActive,
-            }));
-            res.status(200).json({ totalPage: count, data: results });
-            break;
+          const results = students.map(student => ({
+            id: student.id,
+            msv: student.username,
+            name: student.name,
+            class: student.class.name,
+            institua: student.institua.name,
+            address: student.address,
+            isActive: student.isActive,
+          }));
+          return res.status(200).json({ totalPage: Math.ceil(count / (limit > 0 ? limit : count)), data: results });
+      }
+
+      case 'teachers': {
+        let query = accountRepository.createQueryBuilder('account')
+          .leftJoin('account.role', 'role')
+          .leftJoinAndSelect('account.class', 'class')
+          .leftJoinAndSelect('account.institua', 'institua')
+          .leftJoinAndSelect('account.schoolYear', 'schoolYear')
+          .where('account.roleId = 2');
+      
+        if (searchName != 'undefined') {
+          query = query.andWhere(`LOWER(account.name) LIKE '%${searchName.toLowerCase().trim()}%'`);
         }
 
-        case 'teachers': {
-            let query = accountRepository.createQueryBuilder('account')
-                .leftJoin('account.role', 'role')
-                .leftJoinAndSelect('account.class', 'class')
-                .leftJoinAndSelect('account.institua', 'institua')
-                .leftJoinAndSelect('account.schoolYear', 'schoolYear')
-                .where('account.roleId = 2');
-            
-            if (searchName != 'undefined') {
-                query = query.andWhere(`LOWER(account.name) LIKE '%${searchName.toLowerCase().trim()}%'`);
-            }
+        const [teachers, count] = await query.orderBy('account.name', 'ASC').skip(offset).take(limit).getManyAndCount();
 
-            const [teachers, count] = await query.getManyAndCount();
+        const results = teachers.map(teacher => ({
+            id: teacher.id,
+            name: teacher.name,
+            institua: teacher.institua.name,
+            email: teacher.email,
+            phone: teacher.phone,
+            address: teacher.address,
+        }));
 
-            const results = teachers.map(teacher => ({
-                id: teacher.id,
-                name: teacher.name,
-                institua: teacher.institua.name,
-                email: teacher.email,
-                phone: teacher.phone,
-                address: teacher.address,
-            }));
-
-            res.status(200).json({ totalPage:  count, data: results });
-            break;
-        }
-            
-        default:
-            res.status(500);
+        return res.status(200).json({ totalPage:  Math.ceil(count / (limit > 0 ? limit : count)), data: results });
+      }
+          
+      default:
+        return res.status(500);
     }
   }
 
@@ -283,32 +285,41 @@ export default class UserController extends Repository<Account>{
   }
 
   public updatePassword = async (req: Request, res: Response) => {
-    const authorization = req.headers['authorization'];
-    const accessToken = authorization?.slice(7);
-    const decoded = (jwt.verify(accessToken, process.env.SECRET)) as { id: number };
-    const connection = await PostgresDb.getConnection();
-    const accountRepository = connection.getRepository(Account);
-
-    const account = await accountRepository.findOne({ id: decoded.id });
-
     const username = req.body.username;
     const oldPassword = req.body.oldPassword;
     const newPassword = req.body.newPassword;
 
-    if (account.username !== username) {
-      return res.status(400).json({ message: 'Account has not existed' });
-    }
+    try {
+      if (oldPassword !== newPassword) {
+        return res.status(400).json({ message: 'invalid new password' });
+      }
+  
+      const authorization = req.headers['authorization'];
+      const accessToken = authorization?.slice(7);
+      const decoded = (jwt.verify(accessToken, process.env.SECRET)) as { id: number };
+      const connection = await PostgresDb.getConnection();
+      const accountRepository = connection.getRepository(Account);
+  
+      const account = await accountRepository.findOne({ id: decoded.id });
+  
+      
+      if (account.username !== username) {
+        return res.status(404).json({ message: 'Account has not existed' });
+      }
+  
+      const isLogin = await bcrypt.compare(oldPassword, account.password);
+      if (!isLogin) {
+        return res.status(400).json({ message: 'invalid password' });
+      }
 
-    const isLogin = await bcrypt.compare(oldPassword, account.password);
-    if (isLogin) {
       const salt = await bcrypt.genSalt(parseInt(process.env.SALT_NUMBER));
       const hashedPassword = await bcrypt.hash(newPassword, salt);
       account.password = hashedPassword;
       accountRepository.save(account);
       return res.status(200).json();
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
     }
-
-    return res.status(500).json({ message: 'Account has not existed' });
   } 
 }
 

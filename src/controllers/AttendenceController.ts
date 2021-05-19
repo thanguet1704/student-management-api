@@ -1,7 +1,7 @@
 import Bluebird from 'bluebird';
 import { Request, Response } from 'express';
 import fs from 'fs';
-import jwt from 'jsonwebtoken';
+import jwt, { decode } from 'jsonwebtoken';
 import { get, round } from 'lodash';
 import moment from 'moment';
 import { EntityRepository, Repository } from 'typeorm';
@@ -109,15 +109,53 @@ export default class AttendenceController extends Repository<Attendence>{
 
     const connection = await PostgresDb.getConnection();
     const accountRepository = connection.getRepository(Account);
-    const student = await accountRepository.findOne({ id: decoded.id, roleId: 1 })
+    const account = await accountRepository.createQueryBuilder('account')
+      .innerJoinAndSelect('account.role', 'role')
+      .where({ id: decoded.id })
+      .getOne();
 
     const searchName: string = decodeURIComponent(`${req.query.searchName}`);
     const classIds: number[] = decodeURIComponent(`${req.query.classIds}`).split(',').map(item => Number(item));
     const date = decodeURIComponent(`${req.query.date}`);
-    const limit: number = Number(get(req.query, 'limit', 10));
+    const limit: number = Number(get(req.query, 'limit', 0));
     const offset: number = Number(get(req.query, 'offset', 0));
     
     const attendenceRepository = connection.getRepository(Attendence);
+
+    if (account.role.name === 'student') {
+      let query = attendenceRepository.createQueryBuilder('attendence')
+      .innerJoinAndSelect('attendence.account', 'account')
+      .innerJoinAndSelect('attendence.schedule', 'schedule')
+      .innerJoinAndSelect('schedule.category', 'category')
+      .innerJoinAndSelect('schedule.session', 'session')
+      .innerJoin('schedule.class', 'class')
+      .where('account.id = :accountId', { accountId: decoded.id });
+
+      if (searchName != 'undefined' && Boolean(searchName)) {
+        query = query.andWhere(`LOWER(category.title) LIKE :name`, 
+          { name: `%${searchName.toLowerCase().trim()}%` });
+      }
+
+      const [attendences, count] = await query.orderBy('attendence.date', 'DESC')
+      .skip(offset).take(limit).getManyAndCount();
+
+      const data = attendences.map(attendence => {
+        return {
+          name: attendence.account.name,
+          msv: attendence.account.username,
+          category: attendence.schedule.category.title,
+          date: attendence.date,
+          timeIn: attendence.timeIn,
+          timeOut: attendence.timeOut,
+          status: attendence.status,
+        };
+      });
+  
+      return res.status(200).json({
+        totalPage: Math.ceil(count / limit),
+        data,
+      });
+    }
     
     let query = attendenceRepository.createQueryBuilder('attendence')
       .innerJoinAndSelect('attendence.account', 'account')
@@ -125,18 +163,14 @@ export default class AttendenceController extends Repository<Attendence>{
       .innerJoinAndSelect('schedule.category', 'category')
       .innerJoinAndSelect('schedule.session', 'session')
       .innerJoin('schedule.class', 'class')
-    
-    if (!student) {
-      query = query.where('attendence.date = :date', { date });
+      .where({ date });
+
+    if (account.role.name === 'teacher') {
+      query = query.andWhere('schedule.accountId = :accountId', { accountId: decoded.id });
     }
   
     if (classIds && classIds.filter(Boolean).length > 0) {
       query = query.andWhere('class.id IN (:...classIds)', { classIds });
-    }
-
-    console.log('--------------------', decoded.id);
-    if (student) {
-      query = query.andWhere('account.id = :accountId', { accountId: decoded.id });
     }
 
     if (searchName != 'undefined' && Boolean(searchName)) {
@@ -160,7 +194,7 @@ export default class AttendenceController extends Repository<Attendence>{
     });
 
     return res.status(200).json({
-      totalPage: Math.ceil(count / limit),
+      totalPage: Math.ceil(count / (limit ? limit : count)),
       data,
     });
   }
@@ -170,7 +204,7 @@ export default class AttendenceController extends Repository<Attendence>{
     const startDate = decodeURIComponent(`${req.query.startDate}`);
     const endDate = decodeURIComponent(`${req.query.endDate}`);
     const classId = Number(decodeURIComponent(`${req.query.classId}`));
-    const semesterId = Number(decodeURIComponent(`${req.query.semesterId}`));
+    const semesterId = Number(req.query.semesterId);
 
     const connection = await PostgresDb.getConnection();
     const attendenceRepository = connection.getRepository(Attendence);
@@ -182,9 +216,11 @@ export default class AttendenceController extends Repository<Attendence>{
       .innerJoinAndSelect('attendence.schedule', 'schedule')
       .innerJoinAndSelect('schedule.semester', 'semester');
 
-    query = query.where('schoolYear.id = :schoolYearId', { schoolYearId: Number(schoolYearId) })
-      .andWhere('semester.id = :semesterId', { semesterId });
+    query = query.where('schoolYear.id = :schoolYearId', { schoolYearId: Number(schoolYearId) });
 
+    if (!Number.isNaN(semesterId)) {
+      query = query.andWhere('semester.id = :semesterId', { semesterId });
+    }
 
     if (!Number.isNaN(classId)) {
       query = query.andWhere('class.id = :classId', { classId });
@@ -219,6 +255,7 @@ export default class AttendenceController extends Repository<Attendence>{
     };
 
     const classRepository = connection.getRepository(Class);
+
     const chartsResponse = (await classRepository.query(
       `SELECT distinct(class.id) AS id,
         class.name AS name,
@@ -231,7 +268,7 @@ export default class AttendenceController extends Repository<Attendence>{
       INNER JOIN attendence ON attendence.account_id=account.id
       INNER JOIN schedule ON attendence.schedule_id=schedule.id
       INNER JOIN semester ON schedule.semester_id=semester.id
-      WHERE school_year.id = ${schoolYearId} AND semester.id = ${semesterId}
+      WHERE school_year.id = ${schoolYearId} AND semester.id = 1
       GROUP BY class.id`
     )) as {id: number, name: string, attend: number, absent: number, late: number}[];
 
@@ -258,7 +295,7 @@ export default class AttendenceController extends Repository<Attendence>{
     const accountRepository = connection.getRepository(Account);
 
     let query = accountRepository.createQueryBuilder('account')
-      .select(['account.id', 'account.name'])
+      .select([`account.id "id"`, `account.name "name"`, `class.name "class"`])
       .addSelect('COUNT(attendence.id)', 'absent')
       .innerJoin('account.attendence', 'attendence')
       .innerJoin('account.class', 'class')
@@ -270,7 +307,7 @@ export default class AttendenceController extends Repository<Attendence>{
       query = query.andWhere('class.id = :classId', { classId });
     }
       
-    const accounts = await query.groupBy('account.id')
+    const accounts = await query.groupBy('account.id').addGroupBy('class.name')
       .orderBy('absent', 'DESC')
       .limit(10)
       .getRawMany();
