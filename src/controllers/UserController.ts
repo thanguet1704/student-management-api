@@ -208,22 +208,22 @@ export default class UserController extends Repository<Account>{
         const schoolYearRepository = connection.getRepository(SchoolYear);
         const schoolYear = await schoolYearRepository.findOne({ id: body.schoolYearId })
 
-        if (!schoolYear){
-          res.status(400).json({ error: 'Invalid khoa'});
-        }
+        // if (!schoolYear){
+        //   res.status(400).json({ error: 'Invalid khoa'});
+        // }
 
         const classRepository = connection.getRepository(Class);
         const classDb = await classRepository.findOne({ id: body.classId });
-        if (!classDb) {
-          res.status(400).json({ error: 'Invalid Class'});
-        }
+        // if (!classDb) {
+        //   res.status(400).json({ error: 'Invalid Class'});
+        // }
 
         const instituaRepository = connection.getRepository(Institua);
         const institua = await instituaRepository.findOne({ id: body.instituaId });
         
-        if (!institua) {
-          res.status(400).json({ error: 'Invalid Institua'});
-        }
+        // if (!institua) {
+        //   res.status(400).json({ error: 'Invalid Institua'});
+        // }
         
         const salt = bcrypt.genSaltSync(Number(process.env.SALT_NUMBER));
         const hashedPassword = (body.msv, salt);

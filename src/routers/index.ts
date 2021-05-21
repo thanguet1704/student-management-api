@@ -7,3 +7,4 @@ export { classRoute } from './ClassRoute';
 export { scheduleRoute } from './ScheduleRoute';
 export { classroomRoute } from './ClassroomRoute';
 export { semesterRoute } from './SemesterRoute';
+export { instituaRoute } from './InstituaRoute';

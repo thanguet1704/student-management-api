@@ -1,3 +1,4 @@
+import { instituaRoute } from './routers/InstituaRoute';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -45,6 +46,7 @@ app.use('/users', authMidlerware, userRoute);
 app.use('/subjects', authMidlerware, AdminPermissionMiddleware, subjectRoute);
 app.use('/classrooms', authMidlerware, AdminPermissionMiddleware, classroomRoute);
 app.use('/semesters', authMidlerware, semesterRoute);
+app.use('/instituas', authMidlerware, instituaRoute);
 
 app.listen(process.env.SERVER_PORT, () => {
   console.log(`server start on ${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`);

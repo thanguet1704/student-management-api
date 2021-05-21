@@ -13,6 +13,10 @@ export default class ScheduleController extends Repository<Schedule>{
     const body: ICreateScheduleRequest = req.body;
     const connection = await PostgresDb.getConnection();
     try {
+      if (!body.accountId || !body.categoryId || !body.classId || !body.classroomId
+        || !body.sessionId || !body.subjectId) {
+          return res.status(400).json({ message: 'invalid param' });
+        }
       await connection.manager.transaction(async transactionManager => {
         const schedule = new Schedule();
         schedule.accountId = body.accountId;
