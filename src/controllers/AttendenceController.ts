@@ -115,10 +115,18 @@ export default class AttendenceController extends Repository<Attendence>{
       .getOne();
 
     const searchName: string = decodeURIComponent(`${req.query.searchName}`);
-    const classIds: number[] = decodeURIComponent(`${req.query.classIds}`).split(',').map(item => Number(item));
+    const classId = Number(req.query.classId);
     const date = decodeURIComponent(`${req.query.date}`);
-    const limit: number = Number(get(req.query, 'limit', 0));
-    const offset: number = Number(get(req.query, 'offset', 0));
+    const limit = Number(req.query.limit);
+    const offset = Number(req.query.offset);
+    const semesterId = Number(req.query.semesterId);
+
+    let skip = 0;
+    let take = 0;
+    if (limit) take = limit;
+    if (offset) skip = offset;
+
+    console.log(req.query.limit);
     
     const attendenceRepository = connection.getRepository(Attendence);
 
@@ -137,7 +145,7 @@ export default class AttendenceController extends Repository<Attendence>{
       }
 
       const [attendences, count] = await query.orderBy('attendence.date', 'DESC')
-      .skip(offset).take(limit).getManyAndCount();
+      .skip(skip).take(take).getManyAndCount();
 
       const data = attendences.map(attendence => {
         return {
@@ -162,6 +170,7 @@ export default class AttendenceController extends Repository<Attendence>{
       .innerJoinAndSelect('attendence.schedule', 'schedule')
       .innerJoinAndSelect('schedule.category', 'category')
       .innerJoinAndSelect('schedule.session', 'session')
+      .innerJoin('schedule.semester', 'semester')
       .innerJoin('schedule.class', 'class')
       .where({ date });
 
@@ -169,8 +178,12 @@ export default class AttendenceController extends Repository<Attendence>{
       query = query.andWhere('schedule.accountId = :accountId', { accountId: decoded.id });
     }
   
-    if (classIds && classIds.filter(Boolean).length > 0) {
-      query = query.andWhere('class.id IN (:...classIds)', { classIds });
+    if (semesterId) {
+      query = query.andWhere('semester.id = :semesterId', { semesterId });
+    }
+
+    if (classId) {
+      query = query.andWhere('class.id = :classId', { classId });
     }
 
     if (searchName != 'undefined' && Boolean(searchName)) {
@@ -179,7 +192,7 @@ export default class AttendenceController extends Repository<Attendence>{
     }
 
     const [attendences, count] = await query.orderBy('attendence.date', 'DESC')
-      .skip(offset).take(limit).getManyAndCount();
+      .skip(skip).take(take).getManyAndCount();
 
     const data = attendences.map(attendence => {
       return {

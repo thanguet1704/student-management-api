@@ -96,28 +96,27 @@ export default class UserController extends Repository<Account>{
       await BlueBird.map(data, async (account: any) => {
         return await connection.manager.transaction(async transactionManager => {
           try {
+            const accountRepository = connection.getRepository(Account);
+            const shareAccount = await accountRepository.findOne({ username: account['Mã Học viên'] });
+            if (shareAccount) {
+              return res.status(400).json({ error: `Tài khoản '${account['Mã Học viên']}' đã tồn tại` });
+            }
+
             const classRepository = connection.getRepository(Class);
             const classDb = await classRepository.findOne({ name: account['Lớp'] });
             if (!classDb) {
               res.status(400).json({ error: 'Lớp không hợp lệ'});
-            }
-
-            const instituaRepository = connection.getRepository(Institua);
-            const institua = await instituaRepository.findOne({ name: account['Đơn vị'] });
-            
-            if (!institua) {
-              res.status(400).json({ error: 'Viện không hợp lệ'});
             }
             
             const salt = bcrypt.genSaltSync(Number(process.env.SALT_NUMBER));
             const hashedPassword = (account.msv, salt);
 
             const student = new Account();
-            student.username = account.msv;
-            student.name = account.name;
-            student.address = account.address;
-            student.email = account.email;
-            student.phone = account.phone;
+            student.username = account['Mã Học viên'];
+            student.name = account['Họ và tên'];
+            student.address = account['Địa chỉ'];
+            student.email = account['Email'];
+            student.phone = account['Số điện thoại'];
             student.classId = classDb.id;
             student.instituaId = classDb.instituaId;
             student.roleId = 1;
@@ -149,29 +148,28 @@ export default class UserController extends Repository<Account>{
     try {
       await connection.manager.transaction(async transactionManager => {
         return await BlueBird.map(data, async (account: any) => {
-          const classRepository = connection.getRepository(Class);
-          const classDb = await classRepository.findOne({ name: account['Lớp'] });
-          if (!classDb) {
-            res.status(400).json({ error: 'Invalid Class'});
-          }
-
+          const accountRepository = connection.getRepository(Account);
+            const shareAccount = await accountRepository.findOne({ username: account['Email'] });
+            if (shareAccount) {
+              return res.status(400).json({ error: `Tài khoản '${account['Email']}' đã tồn tại` });
+            }
+  
           const instituaRepository = connection.getRepository(Institua);
           const institua = await instituaRepository.findOne({ name: account['Đơn vị'] });
           
           if (!institua) {
-            return res.status(400).json({ error: 'Invalid Institua'});
+            return res.status(400).json({ error: 'Đơn vị không hợp lệ'});
           }
           
           const salt = bcrypt.genSaltSync(Number(process.env.SALT_NUMBER));
           const hashedPassword = (account.phone, salt);
 
           const teacher = new Account();
-          teacher.username = account.email;
-          teacher.name = account.name;
-          teacher.address = account.address;
-          teacher.email = account.email;
-          teacher.phone = account.phone;
-          teacher.classId = classDb.id;
+          teacher.username = account['Email'];
+          teacher.name = account['Họ và tên'];
+          teacher.address = account['Địa chỉ'];
+          teacher.email = account['Email'];
+          teacher.phone = account['Số điện thoại'];
           teacher.instituaId = institua.id;
           teacher.roleId = 2;
           teacher.password = hashedPassword;
