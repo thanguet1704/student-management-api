@@ -10,10 +10,6 @@ export default class SchoolYear extends BaseEntity{
   @Column('text')
   name: string
 
-  @OneToMany( () => Account,
-  account => account.schoolYear)
-  accounts: Account[];
-
   @OneToMany( () => Class,
   classes => classes.schoolYear)
   classes: Class[];

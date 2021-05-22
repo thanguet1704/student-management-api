@@ -15,7 +15,6 @@ export interface ICreateUser {
     address: string;
     email: string;
     phone: string;
-    schoolYearId?: number;
     classId?: number;
-    instituaId: number;
+    instituaId?: number;
 }

@@ -37,9 +37,6 @@ export default class Account extends BaseEntity {
   @Column('int', { name: 'class_id' })
   classId: number
 
-  @Column('int', { name: 'school_year_id' })
-  schoolYearId: number;
-
   @Column('int', { name: 'role_id', select: false })
   roleId: number
 
@@ -59,11 +56,6 @@ export default class Account extends BaseEntity {
     classHcma => classHcma.accounts)
   @JoinColumn({ name: 'class_id', referencedColumnName: 'id' })
   class: Class;
-
-  @ManyToOne(() => SchoolYear,
-    schoolYear => schoolYear.accounts)
-  @JoinColumn({ name: 'school_year_id', referencedColumnName: 'id' })
-  schoolYear: SchoolYear;
 
   @ManyToOne(() => Institua,
     institua => institua.accounts)

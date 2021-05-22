@@ -268,7 +268,7 @@ export default class AttendenceController extends Repository<Attendence>{
       INNER JOIN attendence ON attendence.account_id=account.id
       INNER JOIN schedule ON attendence.schedule_id=schedule.id
       INNER JOIN semester ON schedule.semester_id=semester.id
-      WHERE school_year.id = ${schoolYearId} AND semester.id = 1
+      WHERE school_year.id = ${schoolYearId} AND semester.id = ${semesterId}
       GROUP BY class.id`
     )) as {id: number, name: string, attend: number, absent: number, late: number}[];
 
@@ -291,6 +291,7 @@ export default class AttendenceController extends Repository<Attendence>{
   public getTopAbsent = async (req: Request, res: Response) => {
     const schoolYearId = Number(req.query.schoolYearId);
     const classId = Number(req.query.classId);
+    const semesterId = Number(req.query.semesterId);
     const connection = await PostgresDb.getConnection();
     const accountRepository = connection.getRepository(Account);
 
@@ -300,8 +301,11 @@ export default class AttendenceController extends Repository<Attendence>{
       .innerJoin('account.attendence', 'attendence')
       .innerJoin('account.class', 'class')
       .innerJoin('class.schoolYear', 'schoolYear')
+      .innerJoin('attendence.schedule', 'schedule')
+      .innerJoin('schedule.semester', 'semester')
       .where({ roleId: 1, isActive: true })
-      .andWhere('schoolYear.id = :schoolYearId', { schoolYearId });
+      .andWhere('schoolYear.id = :schoolYearId', { schoolYearId })
+      .andWhere('semester.id = :semesterId', { semesterId });
 
     if (classId) {
       query = query.andWhere('class.id = :classId', { classId });

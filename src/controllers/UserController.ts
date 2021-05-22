@@ -31,7 +31,6 @@ export default class UserController extends Repository<Account>{
             .leftJoin('account.role', 'role')
             .leftJoinAndSelect('account.class', 'class')
             .leftJoinAndSelect('account.institua', 'institua')
-            .leftJoinAndSelect('account.schoolYear', 'schoolYear')
             .where('role.name = :student', { student: 'student' });
           
           if (searchName != 'undefined') {
@@ -61,7 +60,6 @@ export default class UserController extends Repository<Account>{
           .leftJoin('account.role', 'role')
           .leftJoinAndSelect('account.class', 'class')
           .leftJoinAndSelect('account.institua', 'institua')
-          .leftJoinAndSelect('account.schoolYear', 'schoolYear')
           .where('account.roleId = 2');
       
         if (searchName != 'undefined') {
@@ -98,24 +96,17 @@ export default class UserController extends Repository<Account>{
       await BlueBird.map(data, async (account: any) => {
         return await connection.manager.transaction(async transactionManager => {
           try {
-            const schoolYearRepository = connection.getRepository(SchoolYear);
-            const schoolYear = await schoolYearRepository.findOne({ name: account['Khóa'] })
-
-            if (!schoolYear){
-              res.status(400).json({ error: 'Invalid khoa'});
-            }
-
             const classRepository = connection.getRepository(Class);
             const classDb = await classRepository.findOne({ name: account['Lớp'] });
             if (!classDb) {
-              res.status(400).json({ error: 'Invalid Class'});
+              res.status(400).json({ error: 'Lớp không hợp lệ'});
             }
 
             const instituaRepository = connection.getRepository(Institua);
             const institua = await instituaRepository.findOne({ name: account['Đơn vị'] });
             
             if (!institua) {
-              res.status(400).json({ error: 'Invalid Institua'});
+              res.status(400).json({ error: 'Viện không hợp lệ'});
             }
             
             const salt = bcrypt.genSaltSync(Number(process.env.SALT_NUMBER));
@@ -127,9 +118,8 @@ export default class UserController extends Repository<Account>{
             student.address = account.address;
             student.email = account.email;
             student.phone = account.phone;
-            student.schoolYearId = schoolYear.id;
             student.classId = classDb.id;
-            student.instituaId = institua.id;
+            student.instituaId = classDb.instituaId;
             student.roleId = 1;
             student.password = hashedPassword;
 
@@ -205,25 +195,37 @@ export default class UserController extends Repository<Account>{
     
     try {
       await connection.manager.transaction(async transactionManager => {
-        const schoolYearRepository = connection.getRepository(SchoolYear);
-        const schoolYear = await schoolYearRepository.findOne({ id: body.schoolYearId })
+        if (!body.msv) {
+          return res.status(400).json({ error: 'Mã học viên không được bỏ trống'});
+        }
 
-        // if (!schoolYear){
-        //   res.status(400).json({ error: 'Invalid khoa'});
-        // }
+        const accountRepository = connection.getRepository(Account);
+        const account = await accountRepository.findOne({ username: body.msv });
+
+        if (account) {
+          return res.status(400).json({ error: 'Học viên đã tồn tại'});
+        }
+
+        if (!body.phone) {
+          return res.status(400).json({ error: 'Số điện thoại không được bỏ trống'});
+        }
+
+        if (!body.name) {
+          return res.status(400).json({ error: 'Tên học viên không được bỏ trống'});
+        }
+
+        if (!body.address) {
+          return res.status(400).json({ error: 'Địa chỉ không được bỏ trống'});
+        }
+
+        const classRepositopry = connection.getRepository(Class);
+        const classHCMA = await classRepositopry.findOne({ id: body.classId })
 
         const classRepository = connection.getRepository(Class);
         const classDb = await classRepository.findOne({ id: body.classId });
-        // if (!classDb) {
-        //   res.status(400).json({ error: 'Invalid Class'});
-        // }
-
-        const instituaRepository = connection.getRepository(Institua);
-        const institua = await instituaRepository.findOne({ id: body.instituaId });
-        
-        // if (!institua) {
-        //   res.status(400).json({ error: 'Invalid Institua'});
-        // }
+        if (!classDb) {
+          res.status(400).json({ error: 'Lớp không hợp lệ'});
+        }
         
         const salt = bcrypt.genSaltSync(Number(process.env.SALT_NUMBER));
         const hashedPassword = (body.msv, salt);
@@ -232,11 +234,10 @@ export default class UserController extends Repository<Account>{
         student.username = body.msv;
         student.name = body.name;
         student.address = body.address;
-        student.email = body.email;
+        student.email = `${body.msv}@hcma.edu.vn`;
         student.phone = body.phone;
-        student.schoolYearId = schoolYear.id;
-        student.classId = classDb.id;
-        student.instituaId = institua.id;
+        student.classId = body.classId;
+        student.instituaId = classHCMA.instituaId;
         student.roleId = 1;
         student.password = hashedPassword;
 
@@ -255,11 +256,33 @@ export default class UserController extends Repository<Account>{
     
     try {
       await connection.manager.transaction(async transactionManager => {
+        if (!body.email) {
+          return res.status(400).json({ error: 'Email không được bỏ trống'});
+        }
+
+        const accountRepository = connection.getRepository(Account);
+        const account = await accountRepository.findOne({ username: body.email });
+
+        if (account) {
+          return res.status(400).json({ error: 'Tài khoản đã tồn tại'});
+        }
+
+        if (!body.phone) {
+          return res.status(400).json({ error: 'Số điện thoại không được bỏ trống'});
+        }
+
+        if (!body.phone) {
+          return res.status(400).json({ error: 'Số điện thoại không được bỏ trống'});
+        }
+
+        if (!body.phone) {
+          return res.status(400).json({ error: 'Số điện thoại không được bỏ trống'});
+        }
         const instituaRepository = connection.getRepository(Institua);
         const institua = await instituaRepository.findOne({ id: body.instituaId });
         
         if (!institua) {
-          res.status(400).json({ error: 'Invalid Institua'});
+          res.status(400).json({ error: 'Viện không hợp lệ'});
         }
         
         const salt = bcrypt.genSaltSync(Number(process.env.SALT_NUMBER));
@@ -290,10 +313,6 @@ export default class UserController extends Repository<Account>{
     const newPassword = req.body.newPassword;
 
     try {
-      if (oldPassword !== newPassword) {
-        return res.status(400).json({ message: 'invalid new password' });
-      }
-  
       const authorization = req.headers['authorization'];
       const accessToken = authorization?.slice(7);
       const decoded = (jwt.verify(accessToken, process.env.SECRET)) as { id: number };
