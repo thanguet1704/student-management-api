@@ -21,38 +21,43 @@ export default class UserController extends Repository<Account>{
     const searchName = decodeURIComponent(`${req.query.search}`);
     const limit = Number(req.query.limit) || 0;
     const offset = Number(req.query.offset) || 0;
+    const classId = Number(req.query.classId);
 
     const connection = await PostgresDb.getConnection();
     const accountRepository = connection.getRepository(Account);
 
     switch (type) {
       case 'students': {
-          let query = accountRepository.createQueryBuilder('account')
-            .leftJoin('account.role', 'role')
-            .leftJoinAndSelect('account.class', 'class')
-            .leftJoinAndSelect('account.institua', 'institua')
-            .where('role.name = :student', { student: 'student' });
-          
-          if (searchName != 'undefined') {
-            query = query.andWhere(`LOWER(account.name) LIKE '%${searchName.toLowerCase().trim()}%'`);
-          }
+        let query = accountRepository.createQueryBuilder('account')
+          .leftJoin('account.role', 'role')
+          .leftJoinAndSelect('account.class', 'class')
+          .leftJoinAndSelect('account.institua', 'institua')
+          .where('role.name = :student', { student: 'student' });
 
-          const [students, count] = await query.orderBy('account.isActive', 'DESC')
-            .addOrderBy('account.classId', 'ASC')
-            .skip(offset)
-            .take(limit)
-            .getManyAndCount();
+        if (classId) {
+          query = query.andWhere('class.id = :classId', { classId });
+        }
+        
+        if (searchName != 'undefined') {
+          query = query.andWhere(`LOWER(account.name) LIKE '%${searchName.toLowerCase().trim()}%'`);
+        }
 
-          const results = students.map(student => ({
-            id: student.id,
-            msv: student.username,
-            name: student.name,
-            class: student.class.name,
-            institua: student.institua.name,
-            address: student.address,
-            isActive: student.isActive,
-          }));
-          return res.status(200).json({ totalPage: Math.ceil(count / (limit > 0 ? limit : count)), data: results });
+        const [students, count] = await query.orderBy('account.isActive', 'DESC')
+          .addOrderBy('account.classId', 'ASC')
+          .skip(offset)
+          .take(limit)
+          .getManyAndCount();
+
+        const results = students.map(student => ({
+          id: student.id,
+          msv: student.username,
+          name: student.name,
+          class: student.class.name,
+          institua: student.institua.name,
+          address: student.address,
+          isActive: student.isActive,
+        }));
+        return res.status(200).json({ totalPage: Math.ceil(count / (limit > 0 ? limit : count)), data: results });
       }
 
       case 'teachers': {

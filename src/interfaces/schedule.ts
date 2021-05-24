@@ -9,4 +9,5 @@ export interface ICreateScheduleRequest {
     startDate: Date;
     endDate: Date;
     finalExamDate: Date;
+    semesterId: number;
 }

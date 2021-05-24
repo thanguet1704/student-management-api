@@ -9,7 +9,9 @@ export default class SubjectController extends Repository<Subject>{
     const connection = await PostgresDb.getConnection();
     const subjectRepository = connection.getRepository(Subject);
 
-    const subjects = await subjectRepository.find();
+    const subjects = await subjectRepository.find({ order: {
+      name: 'ASC'
+    }});
 
     res.status(200).json(subjects);
   }
@@ -22,6 +24,7 @@ export default class SubjectController extends Repository<Subject>{
     const categories = await categoryRepository.createQueryBuilder('category')
       .leftJoin('category.subject', 'subject')
       .where('subject.id = :subjectId', { subjectId })
+      .orderBy('category.title', 'ASC')
       .getMany();
 
     const results = categories.map(category => ({

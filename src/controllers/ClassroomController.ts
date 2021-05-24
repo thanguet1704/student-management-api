@@ -9,7 +9,11 @@ export default class ClassroomController extends Repository<Classroom>{
     const connection = await PostgresDb.getConnection();
     const classroomRepository = connection.getRepository(Classroom);
 
-    const classrooms = (await classroomRepository.find());
+    const classrooms = await classroomRepository.find({
+      order: {
+        name: 'ASC'
+      }
+    });
 
     const result = classrooms.map(classroom => ({
         id: classroom.id,

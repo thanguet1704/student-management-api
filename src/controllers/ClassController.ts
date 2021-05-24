@@ -32,7 +32,7 @@ export default class ClassController extends Repository<Class>{
           .where('schedule.accountId = :teacherId', { teacherId: account.id });
       }
 
-      const classes = await query.getMany();
+      const classes = await query.orderBy('class.name', 'ASC').getMany();
 
       return res.status(200).json(classes);
     } catch (error) {

@@ -27,7 +27,9 @@ export default class InstituaController extends Repository<Account>{
         }
 
         const instituaRepository = connection.getRepository(Institua);
-        const instituas = await instituaRepository.find();
+        const instituas = await instituaRepository.find({ order: {
+          name: 'ASC'
+        }});
 
         return res.status(200).json(instituas);
     } catch (error) {

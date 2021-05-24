@@ -23,31 +23,31 @@ export default class AttendenceController extends Repository<Attendence>{
       await connection.manager.transaction(async transactionManager => {
         return await Bluebird.map(data, async (attendence: any) => {
           const accountRepository = connection.getRepository(Account);
-          const student = await accountRepository.findOne({ username: attendence['MSV'], name: attendence['Họ và tên'] });
+          const student = await accountRepository.findOne({ username: attendence['MSV'] });
 
           if (!student) {
-            res.status(400).json({ message: 'Invalid student' });
+            res.status(400).json({ message: 'Học viên không tồn tại' });
           }
 
           const categoryRepository = connection.getRepository(Category);
           const category = await categoryRepository.findOne({ title: attendence['Chuyên đề'] });
 
           if (!category) {
-            res.status(400).json({ message: 'Invalid category' });
+            res.status(400).json({ message: 'Chuyên đề không tồn tại' });
           }
 
           const classRository = connection.getRepository(Class);
           const classSchool = await classRository.findOne({ name: attendence['Lớp'] });
 
           if (!classSchool) {
-            res.status(400).json({ message: 'Invalid class' });
+            res.status(400).json({ message: 'Lớp không tồn tại' });
           }
 
           const classroomRepository = connection.getRepository(Classroom);
           const classroom = await classroomRepository.findOne({ name: attendence['Phòng học'] });
 
           if (!classroom) {
-            res.status(400).json({ message: 'Invalid classroom' });
+            res.status(400).json({ message: 'Phòng học không tồn tại' });
           }
 
           const scheduleRepository = connection.getRepository(Schedule);
@@ -132,12 +132,17 @@ export default class AttendenceController extends Repository<Attendence>{
 
     if (account.role.name === 'student') {
       let query = attendenceRepository.createQueryBuilder('attendence')
-      .innerJoinAndSelect('attendence.account', 'account')
       .innerJoinAndSelect('attendence.schedule', 'schedule')
       .innerJoinAndSelect('schedule.category', 'category')
       .innerJoinAndSelect('schedule.session', 'session')
-      .innerJoin('schedule.class', 'class')
+      .innerJoinAndSelect('schedule.class', 'class')
+      .innerJoinAndSelect('schedule.semester', 'semester')
+      .innerJoinAndSelect('attendence.account', 'account')
       .where('account.id = :accountId', { accountId: decoded.id });
+
+      if (semesterId) {
+        query = query.andWhere('semester.id = :semesterId', { semesterId });
+      }
 
       if (searchName != 'undefined' && Boolean(searchName)) {
         query = query.andWhere(`LOWER(category.title) LIKE :name`, 
@@ -158,7 +163,7 @@ export default class AttendenceController extends Repository<Attendence>{
           status: attendence.status,
         };
       });
-  
+
       return res.status(200).json({
         totalPage: Math.ceil(count / limit),
         data,
@@ -174,6 +179,7 @@ export default class AttendenceController extends Repository<Attendence>{
       .innerJoin('schedule.class', 'class')
       .where({ date });
 
+    console.log(account.role.name);
     if (account.role.name === 'teacher') {
       query = query.andWhere('schedule.accountId = :accountId', { accountId: decoded.id });
     }
@@ -219,8 +225,17 @@ export default class AttendenceController extends Repository<Attendence>{
     const classId = Number(decodeURIComponent(`${req.query.classId}`));
     const semesterId = Number(req.query.semesterId);
 
+    const authorization = req.headers['authorization'];
+    const accessToken = authorization?.slice(7);
+    const decoded = (jwt.verify(accessToken, process.env.SECRET)) as { id: number };
+
     const connection = await PostgresDb.getConnection();
+    const accountRepository = connection.getRepository(Account);
     const attendenceRepository = connection.getRepository(Attendence);
+
+    const account = await accountRepository.createQueryBuilder('account')
+      .where({ id: decoded.id })
+      .getOne();
 
     let query = attendenceRepository.createQueryBuilder('attendence')
       .innerJoinAndSelect('attendence.account', 'account')
@@ -229,7 +244,13 @@ export default class AttendenceController extends Repository<Attendence>{
       .innerJoinAndSelect('attendence.schedule', 'schedule')
       .innerJoinAndSelect('schedule.semester', 'semester');
 
-    query = query.where('schoolYear.id = :schoolYearId', { schoolYearId: Number(schoolYearId) });
+    if (account.roleId === 3) {
+      query = query.where('schoolYear.id = :schoolYearId', { schoolYearId: Number(schoolYearId) });
+    }
+    
+    if (account.roleId === 2) {
+      query = query.andWhere('schedule.accountId = :accountId', { accountId: account.id });
+    }
 
     if (!Number.isNaN(semesterId)) {
       query = query.andWhere('semester.id = :semesterId', { semesterId });
@@ -269,7 +290,7 @@ export default class AttendenceController extends Repository<Attendence>{
 
     const classRepository = connection.getRepository(Class);
 
-    const chartsResponse = (await classRepository.query(
+    let chartsResponse = 
       `SELECT distinct(class.id) AS id,
         class.name AS name,
         COALESCE (COUNT(attendence.status) FILTER ( where attendence.status = 'attend' )) AS attend,
@@ -281,11 +302,22 @@ export default class AttendenceController extends Repository<Attendence>{
       INNER JOIN attendence ON attendence.account_id=account.id
       INNER JOIN schedule ON attendence.schedule_id=schedule.id
       INNER JOIN semester ON schedule.semester_id=semester.id
-      WHERE school_year.id = ${schoolYearId} AND semester.id = ${semesterId}
+      WHERE semester.id = ${semesterId}`;
+
+    if (account.roleId === 3) {
+      chartsResponse = `${chartsResponse} AND school_year.id = ${schoolYearId}`
+    }
+
+    if (account.roleId === 2) {
+      chartsResponse = `${chartsResponse} AND schedule.account_id = ${account.id}`
+    }
+
+    const dataCharts = (await classRepository.query(
+      `${chartsResponse}
       GROUP BY class.id`
     )) as {id: number, name: string, attend: number, absent: number, late: number}[];
 
-    const charts = chartsResponse.map(chart => ({
+    const charts = dataCharts.map(chart => ({
       id: chart.id,
       name: chart.name,
       attend: chart.attend,
@@ -308,6 +340,14 @@ export default class AttendenceController extends Repository<Attendence>{
     const connection = await PostgresDb.getConnection();
     const accountRepository = connection.getRepository(Account);
 
+    const authorization = req.headers['authorization'];
+    const accessToken = authorization?.slice(7);
+    const decoded = (jwt.verify(accessToken, process.env.SECRET)) as { id: number };
+
+    const account = await accountRepository.createQueryBuilder('account')
+      .where({ id: decoded.id })
+      .getOne();
+
     let query = accountRepository.createQueryBuilder('account')
       .select([`account.id "id"`, `account.name "name"`, `class.name "class"`])
       .addSelect('COUNT(attendence.id)', 'absent')
@@ -317,8 +357,15 @@ export default class AttendenceController extends Repository<Attendence>{
       .innerJoin('attendence.schedule', 'schedule')
       .innerJoin('schedule.semester', 'semester')
       .where({ roleId: 1, isActive: true })
-      .andWhere('schoolYear.id = :schoolYearId', { schoolYearId })
       .andWhere('semester.id = :semesterId', { semesterId });
+
+    if (account.roleId === 3) {
+      query = query.andWhere('schoolYear.id = :schoolYearId', { schoolYearId })
+    }
+
+    if (account.roleId === 2) {
+      query = query.andWhere('schedule.accountId = :accountId', { accountId: account.id });
+    }
 
     if (classId) {
       query = query.andWhere('class.id = :classId', { classId });

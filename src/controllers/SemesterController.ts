@@ -13,7 +13,7 @@ export default class SemesterController extends Repository<Semester>{
     
     const semesters = await semesterRepo.find({
         order: {
-            startDate: 'DESC',
+          startDate: 'DESC',
         },
     });
 

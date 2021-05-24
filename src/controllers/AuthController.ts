@@ -33,7 +33,7 @@ export default class AuthController extends Repository<Account>{
 
         return res.status(401).json({ message: 'Unauthorized' });
     } catch (error) {
-        return res.status(401).json({ message: 'Unauthorized' });
+        return res.status(500).json({ message: 'Internal Server Error' });
     }
   }
 }

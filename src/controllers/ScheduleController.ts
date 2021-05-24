@@ -25,6 +25,7 @@ export default class ScheduleController extends Repository<Schedule>{
         schedule.date = body.learningDate;
         schedule.sessionId = body.sessionId;
         schedule.classroomId = body.classroomId;
+        schedule.semesterId = body.semesterId;
 
         const createdSchedule = await transactionManager.save(schedule);
 
@@ -72,8 +73,7 @@ export default class ScheduleController extends Repository<Schedule>{
       .innerJoinAndSelect('schedule.subjectSchedule', 'subjectSchedule')
       .innerJoinAndSelect('category.subject', 'subject')
       .innerJoinAndSelect('schedule.session', 'session')
-      .innerJoin('class.accounts', 'accounts')
-      .where('accounts.id = :accountId', { accountId: decoded.id })
+      .where('class.id = :classId', { classId: account.classId })
       .andWhere('schedule.semesterId = :semesterId', { semesterId });
 
       if (startDate !== 'undefined' && endDate !== 'undefined') {
