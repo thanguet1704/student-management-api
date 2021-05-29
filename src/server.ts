@@ -20,6 +20,7 @@ import {
   subjectRoute,
   userRoute
 } from './routers';
+import { sendEmailRoute } from './routers/SendEmailRoute';
 
 dotenv.config();
 
@@ -47,6 +48,7 @@ app.use('/subjects', authMidlerware, AdminPermissionMiddleware, subjectRoute);
 app.use('/classrooms', authMidlerware, AdminPermissionMiddleware, classroomRoute);
 app.use('/semesters', authMidlerware, semesterRoute);
 app.use('/instituas', authMidlerware, instituaRoute);
+app.use('/sendEmail', authMidlerware, AdminPermissionMiddleware , sendEmailRoute);
 
 app.listen(process.env.SERVER_PORT, () => {
   console.log(`server start on ${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`);

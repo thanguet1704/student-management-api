@@ -10,3 +10,4 @@ export { default as SubjectController } from './SubjectController';
 export { default as ClassroomController } from './ClassroomController';
 export { default as SemesterController } from './SemesterController';
 export { default as InstituaController } from './InstituaController';
+export { default as  SendMailController } from './SendMailController';
