@@ -276,15 +276,15 @@ export default class AttendenceController extends Repository<Attendence>{
       },
       attend: {
         value: attendStat,
-        percent: round(attendStat / allAttendence),
+        percent: round(attendStat / allAttendence, 2) || 0,
       },
       absent: {
         value: absentStat,
-        percent: round(absentStat / allAttendence),
+        percent: round(absentStat / allAttendence, 2) || 0,
       },
       late: {
         value: lateStat,
-        percent: round(lateStat / allAttendence),
+        percent: round(lateStat / allAttendence, 2) || 0,
       },
     };
 
