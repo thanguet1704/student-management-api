@@ -30,6 +30,12 @@ export default class Account extends BaseEntity {
 
   @Column('text')
   phone: string
+  
+  @Column('enum')
+  gender: 'male' | 'female';
+
+  @Column('timestamp with time zone')
+  birthday: string
 
   @Column('int', { name: 'institua_id' })
   instituaId: number;

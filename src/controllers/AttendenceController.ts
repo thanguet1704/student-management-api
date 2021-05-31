@@ -349,7 +349,7 @@ export default class AttendenceController extends Repository<Attendence>{
       .getOne();
 
     let query = accountRepository.createQueryBuilder('account')
-      .select([`account.id "id"`, `account.name "name"`, `class.name "class"`])
+      .select([`account.id "id"`, `account.name "name"`, `class.name "class"`, `account.email "email"`])
       .addSelect('COUNT(attendence.id)', 'absent')
       .innerJoin('account.attendence', 'attendence')
       .innerJoin('account.class', 'class')

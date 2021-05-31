@@ -4,12 +4,13 @@ import dotenv from 'dotenv';
 import { Request, Response } from 'express';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
-import { EntityRepository, Repository } from 'typeorm';
+import { EntityRepository, Repository, getRepository } from 'typeorm';
 import xlsx from 'xlsx';
 import PostgresDb from '../common/postgresDb';
-import { Account, Class, SchoolYear } from '../models';
+import { Account, Class } from '../models';
 import Institua from '../models/Institua';
-import { ICreateUser, ICreateUsers } from './../interfaces/user';
+import { ICreateUser, IUpdateInfo } from './../interfaces/user';
+import moment from 'moment';
 
 dotenv.config();
 
@@ -55,6 +56,8 @@ export default class UserController extends Repository<Account>{
           class: student.class.name,
           institua: student.institua.name,
           address: student.address,
+          birthday: student.birthday,
+          gender: student.gender,
           isActive: student.isActive,
         }));
         return res.status(200).json({ totalPage: Math.ceil(count / (limit > 0 ? limit : count)), data: results });
@@ -80,6 +83,7 @@ export default class UserController extends Repository<Account>{
             email: teacher.email,
             phone: teacher.phone,
             address: teacher.address,
+            gender: teacher.gender,
         }));
 
         return res.status(200).json({ totalPage:  Math.ceil(count / (limit > 0 ? limit : count)), data: results });
@@ -98,48 +102,53 @@ export default class UserController extends Repository<Account>{
     const connection = await PostgresDb.getConnection();
     
     try {
-      await BlueBird.map(data, async (account: any) => {
-        return await connection.manager.transaction(async transactionManager => {
-          try {
-            const accountRepository = connection.getRepository(Account);
-            const shareAccount = await accountRepository.findOne({ username: account['Mã Học viên'] });
-            if (shareAccount) {
-              return res.status(400).json({ error: `Tài khoản '${account['Mã Học viên']}' đã tồn tại` });
-            }
-
-            const classRepository = connection.getRepository(Class);
-            const classDb = await classRepository.findOne({ name: account['Lớp'] });
-            if (!classDb) {
-              res.status(400).json({ error: 'Lớp không hợp lệ'});
-            }
-            
-            const salt = bcrypt.genSaltSync(Number(process.env.SALT_NUMBER));
-            const hashedPassword = (account.msv, salt);
-
-            const student = new Account();
-            student.username = account['Mã Học viên'];
-            student.name = account['Họ và tên'];
-            student.address = account['Địa chỉ'];
-            student.email = account['Email'];
-            student.phone = account['Số điện thoại'];
-            student.classId = classDb.id;
-            student.instituaId = classDb.instituaId;
-            student.roleId = 1;
-            student.password = hashedPassword;
-
-            return await transactionManager.save(student);
-          } catch (error) {
-            fs.unlinkSync(req.file.path);
-            return res.status(500).json(error.message);
+      await connection.manager.transaction(async transactionManager => {
+        const createdStudents = await BlueBird.map(data, async (account: any) => {
+          const accountRepository = connection.getRepository(Account);
+          const shareAccount = await accountRepository.findOne({ username: account['Mã Học viên'] });
+          if (shareAccount) {
+            return res.status(400).json({ error: `Tài khoản '${account['Mã Học viên']}' đã tồn tại` });
           }
+
+          const classRepository = connection.getRepository(Class);
+          const classDb = await classRepository.findOne({ name: account['Lớp'] });
+          if (!classDb) {
+            res.status(400).json({ error: 'Lớp không hợp lệ'});
+          }
+          
+          const salt = await bcrypt.genSalt(Number(process.env.SALT_NUMBER));
+          const hashedPassword = await bcrypt.hash(account.msv, salt);
+
+          const genders: { value: string; label: string; }[] = [{ value: 'male', label: 'Nam'}, { value: 'female', label: 'Nữ' }];
+
+          const formatDate = moment(account['Ngày sinh'], 'YYYY-MM-DD').format();
+
+          const student = new Account();
+          student.username = account['Mã Học viên'];
+          student.name = account['Họ và tên'];
+          student.address = account['Địa chỉ'];
+          student.email = account['Email'];
+          student.phone = account['Số điện thoại'];
+          student.classId = classDb.id;
+          student.instituaId = classDb.instituaId;
+          student.roleId = 1;
+          student.password = hashedPassword;
+          student.birthday = moment(formatDate).toISOString();
+          student.gender = genders.find(gender => gender.label === account['Giới tính']).value as 'male' | 'female';
+
+          return await transactionManager.save(student);
+        });
+        fs.unlink(req.file.path, (err) => {
+          if (err) return res.status(500).json({ error: 'Internal Server Error'});
         });
       });
 
-      fs.unlinkSync(req.file.path);
-
       return res.status(201).json({ message: 'success' });
     } catch (error) {
-      fs.unlinkSync(req.file.path);
+      fs.unlink(req.file.path, (err) => {
+        if (err) return res.status(500).json({ error: 'Internal Server Error' });
+      });
+
       return res.status(500).json({ error: error.message });
     }
   }
@@ -152,7 +161,7 @@ export default class UserController extends Repository<Account>{
     
     try {
       await connection.manager.transaction(async transactionManager => {
-        return await BlueBird.map(data, async (account: any) => {
+        const created = await BlueBird.map(data, async (account: any) => {
           const accountRepository = connection.getRepository(Account);
             const shareAccount = await accountRepository.findOne({ username: account['Email'] });
             if (shareAccount) {
@@ -165,9 +174,13 @@ export default class UserController extends Repository<Account>{
           if (!institua) {
             return res.status(400).json({ error: 'Đơn vị không hợp lệ'});
           }
+
+          const genders: { value: string; label: string; }[] = [{ value: 'male', label: 'Nam'}, { value: 'female', label: 'Nữ' }];
           
-          const salt = bcrypt.genSaltSync(Number(process.env.SALT_NUMBER));
-          const hashedPassword = (account.phone, salt);
+          const salt = await bcrypt.genSalt(Number(process.env.SALT_NUMBER));
+          const hashedPassword = await bcrypt.hash(account.phone, salt);
+
+          const formatDate = moment(account['Ngày sinh'], 'YYYY-MM-DD').format();
 
           const teacher = new Account();
           teacher.username = account['Email'];
@@ -178,17 +191,25 @@ export default class UserController extends Repository<Account>{
           teacher.instituaId = institua.id;
           teacher.roleId = 2;
           teacher.password = hashedPassword;
+          teacher.birthday = moment(formatDate).toISOString();
+          teacher.gender = genders.find(gender => gender.label === account['Giới tính']).value as 'male' | 'female';
 
           await transactionManager.save(teacher);
         });
-      });
+  
+        fs.unlink(req.file.path, (err) => {
+          if (err) return res.status(500).json({ error: err });
+        });
 
-      fs.unlinkSync(req.file.path);
+        return created;
+      });
 
       return res.status(201).json({ message: 'success' });
     } catch (error) {
-      fs.unlinkSync(req.file.path);
-      return res.status(500).json({ error: error.message });
+      fs.unlink(req.file.path, (err) => {
+        if (err) return res.status(500).json({ error: err });
+        return res.status(500).json({ error: error.message });
+      });
     }
   }
 
@@ -230,8 +251,8 @@ export default class UserController extends Repository<Account>{
           res.status(400).json({ error: 'Lớp không hợp lệ'});
         }
         
-        const salt = bcrypt.genSaltSync(Number(process.env.SALT_NUMBER));
-        const hashedPassword = (body.msv, salt);
+        const salt = await bcrypt.genSalt(Number(process.env.SALT_NUMBER));
+        const hashedPassword = await bcrypt.hash(body.msv, salt);
 
         const student = new Account();
         student.username = body.msv;
@@ -243,6 +264,8 @@ export default class UserController extends Repository<Account>{
         student.instituaId = classHCMA.instituaId;
         student.roleId = 1;
         student.password = hashedPassword;
+        student.birthday = body.birthday;
+        student.gender = body.gender;
 
         return await transactionManager.save(student);
       });
@@ -288,8 +311,8 @@ export default class UserController extends Repository<Account>{
           res.status(400).json({ error: 'Viện không hợp lệ'});
         }
         
-        const salt = bcrypt.genSaltSync(Number(process.env.SALT_NUMBER));
-        const hashedPassword = (body.phone, salt);
+        const salt = await bcrypt.genSalt(Number(process.env.SALT_NUMBER));
+        const hashedPassword = await bcrypt.hash(body.phone, salt);
 
         const teacher = new Account();
         teacher.username = body.email;
@@ -343,5 +366,34 @@ export default class UserController extends Repository<Account>{
       return res.status(500).json({ message: error.message });
     }
   } 
+
+  public updateInfo = async (req: Request, res: Response) => {
+    const body: IUpdateInfo = req.body;
+
+    try {
+      const accountrepo = await getRepository(Account);
+      const account = await accountrepo.findOne({ id: body.id });
+
+      if (!account) {
+        return res.status(404).json({ error: 'Tài khoản không tồn tại' });
+      }
+
+      if (body.instituaId) account.instituaId = body.instituaId;
+      if (body.name) account.name = body.name;
+      if (body.email) account.email = body.email;
+      if (body.phone) account.phone = body.phone;
+      if (body.birthday) account.birthday = body.birthday;
+      if (body.classId) account.classId = body.classId;
+      if (body.gender) account.gender = body.gender as 'male' | 'female';
+      if (body.birthday) account.birthday = body.birthday;
+      if (body.address) account.address = body.address;
+
+      await accountrepo.save(account);
+
+      return res.status(200).json({ message: 'Cập thông tin thành công '});
+    } catch (error) {
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
 }
 
