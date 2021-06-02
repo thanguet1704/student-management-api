@@ -116,17 +116,17 @@ export default class AttendenceController extends Repository<Attendence>{
 
     const searchName: string = decodeURIComponent(`${req.query.searchName}`);
     const classId = Number(req.query.classId);
-    const date = decodeURIComponent(`${req.query.date}`);
+    const date = moment(decodeURIComponent(`${req.query.date}`), 'YYYY-MM-DD').format();
     const limit = Number(req.query.limit);
     const offset = Number(req.query.offset);
     const semesterId = Number(req.query.semesterId);
+    const startDate = moment(new Date(date)).subtract(1, 'days').toISOString();
+    const endDate = moment(new Date(date)).add(1, 'days').toISOString();
 
     let skip = 0;
     let take = 0;
     if (limit) take = limit;
     if (offset) skip = offset;
-
-    console.log(req.query.limit);
     
     const attendenceRepository = connection.getRepository(Attendence);
 
@@ -177,7 +177,7 @@ export default class AttendenceController extends Repository<Attendence>{
       .innerJoinAndSelect('schedule.session', 'session')
       .innerJoin('schedule.semester', 'semester')
       .innerJoin('schedule.class', 'class')
-      .where({ date });
+      .where('attendence.date BETWEEN :startDate AND :endDate', { startDate, endDate });
 
     console.log(account.role.name);
     if (account.role.name === 'teacher') {
@@ -213,7 +213,7 @@ export default class AttendenceController extends Repository<Attendence>{
     });
 
     return res.status(200).json({
-      totalPage: Math.ceil(count / (limit ? limit : count)),
+      totalPage: Math.ceil(count / (limit ? limit : count)) | 0,
       data,
     });
   }

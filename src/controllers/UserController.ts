@@ -53,12 +53,16 @@ export default class UserController extends Repository<Account>{
           id: student.id,
           msv: student.username,
           name: student.name,
-          class: student.class.name,
+          class: {
+            id: student.class.id,
+            name: student.class.name,
+          },
           institua: student.institua.name,
           address: student.address,
           birthday: student.birthday,
           gender: student.gender,
           isActive: student.isActive,
+          email: student.email,
         }));
         return res.status(200).json({ totalPage: Math.ceil(count / (limit > 0 ? limit : count)), data: results });
       }
@@ -79,7 +83,10 @@ export default class UserController extends Repository<Account>{
         const results = teachers.map(teacher => ({
             id: teacher.id,
             name: teacher.name,
-            institua: teacher.institua.name,
+            institua: {
+              id: teacher.institua.id,
+              name: teacher.institua.name,
+            },
             email: teacher.email,
             phone: teacher.phone,
             address: teacher.address,
@@ -219,10 +226,6 @@ export default class UserController extends Repository<Account>{
     
     try {
       await connection.manager.transaction(async transactionManager => {
-        if (!body.msv) {
-          return res.status(400).json({ error: 'Mã học viên không được bỏ trống'});
-        }
-
         const accountRepository = connection.getRepository(Account);
         const account = await accountRepository.findOne({ username: body.msv });
 
@@ -394,6 +397,24 @@ export default class UserController extends Repository<Account>{
     } catch (error) {
       return res.status(500).json({ error: 'Internal Server Error' });
     }
+  }
+
+  public getInfo = async (req: Request, res: Response) => {
+    const id = Number(req.query.id);
+
+    const account = await getRepository(Account).findOne({ id });
+
+    const result = {
+      id: account.id,
+      name: account.name,
+      classId: account.classId,
+      address: account.address,
+      phone: account.phone,
+      birthday: account.birthday,
+      gender: account.gender,
+    };
+
+    return res.status(200).json(result);
   }
 }
 

@@ -42,4 +42,5 @@ userRoute.post('/teachers', AdminPermissionMiddleware, upload.single('file'), us
 userRoute.post('/student', AdminPermissionMiddleware, userController.createStudent);
 userRoute.post('/teacher', AdminPermissionMiddleware, userController.createTeacher);
 userRoute.patch('/info', AdminPermissionMiddleware, userController.updateInfo);
+userRoute.get('/info', AdminPermissionMiddleware, userController.getInfo);
 
