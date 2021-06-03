@@ -43,7 +43,7 @@ export default class Account extends BaseEntity {
   @Column('int', { name: 'class_id' })
   classId: number
 
-  @Column('int', { name: 'role_id', select: false })
+  @Column('int', { name: 'role_id' })
   roleId: number
 
   @Column('boolean', { name: 'is_active', default: true })

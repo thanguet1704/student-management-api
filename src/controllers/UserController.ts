@@ -91,6 +91,7 @@ export default class UserController extends Repository<Account>{
             phone: teacher.phone,
             address: teacher.address,
             gender: teacher.gender,
+            birthday: teacher.birthday,
         }));
 
         return res.status(200).json({ totalPage:  Math.ceil(count / (limit > 0 ? limit : count)), data: results });

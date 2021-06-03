@@ -120,7 +120,7 @@ export default class AttendenceController extends Repository<Attendence>{
     const limit = Number(req.query.limit);
     const offset = Number(req.query.offset);
     const semesterId = Number(req.query.semesterId);
-    const startDate = moment(new Date(date)).subtract(1, 'days').toISOString();
+    const startDate = moment(new Date(date)).toISOString();
     const endDate = moment(new Date(date)).add(1, 'days').toISOString();
 
     let skip = 0;
@@ -136,6 +136,7 @@ export default class AttendenceController extends Repository<Attendence>{
       .innerJoinAndSelect('schedule.category', 'category')
       .innerJoinAndSelect('schedule.session', 'session')
       .innerJoinAndSelect('schedule.class', 'class')
+      .innerJoin('class.schoolYear', 'schoolYear')
       .innerJoinAndSelect('schedule.semester', 'semester')
       .innerJoinAndSelect('attendence.account', 'account')
       .where('account.id = :accountId', { accountId: decoded.id });
@@ -177,7 +178,7 @@ export default class AttendenceController extends Repository<Attendence>{
       .innerJoinAndSelect('schedule.session', 'session')
       .innerJoin('schedule.semester', 'semester')
       .innerJoin('schedule.class', 'class')
-      .where('attendence.date BETWEEN :startDate AND :endDate', { startDate, endDate });
+      .where(`attendence.date > :startDate AND attendence.date < :endDate`, { startDate, endDate });
 
     console.log(account.role.name);
     if (account.role.name === 'teacher') {
@@ -219,10 +220,8 @@ export default class AttendenceController extends Repository<Attendence>{
   }
 
   public getAttendenceStats = async (req: Request, res: Response) => {
-    const schoolYearId = decodeURIComponent(`${req.query.schoolYearId}`);
-    const startDate = decodeURIComponent(`${req.query.startDate}`);
-    const endDate = decodeURIComponent(`${req.query.endDate}`);
-    const classId = Number(decodeURIComponent(`${req.query.classId}`));
+    const schoolYearId = Number(req.query.schoolYearId);
+    const classId = Number(req.query.classId);
     const semesterId = Number(req.query.semesterId);
 
     const authorization = req.headers['authorization'];
@@ -244,24 +243,21 @@ export default class AttendenceController extends Repository<Attendence>{
       .innerJoinAndSelect('attendence.schedule', 'schedule')
       .innerJoinAndSelect('schedule.semester', 'semester');
 
-    if (account.roleId === 3) {
-      query = query.where('schoolYear.id = :schoolYearId', { schoolYearId: Number(schoolYearId) });
+    if (!Number.isNaN(semesterId)) {
+      query = query.andWhere('semester.id = :semesterId', { semesterId });
+    }
+
+
+    if (account.roleId === 3 && !Number.isNaN(schoolYearId)) {
+      query = query.where('schoolYear.id = :schoolYearId', { schoolYearId });
     }
     
     if (account.roleId === 2) {
       query = query.andWhere('schedule.accountId = :accountId', { accountId: account.id });
     }
 
-    if (!Number.isNaN(semesterId)) {
-      query = query.andWhere('semester.id = :semesterId', { semesterId });
-    }
-
     if (!Number.isNaN(classId)) {
       query = query.andWhere('class.id = :classId', { classId });
-    }
-
-    if (startDate != 'undefined' && endDate != 'undefined' && Boolean(startDate) && Boolean(endDate)) {
-      query = query.andWhere('attendence.date >= :startDate AND attendence.date <= :endDate', { startDate, endDate })
     }
 
     const allAttendence = await query.getCount();
