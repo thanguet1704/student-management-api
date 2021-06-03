@@ -77,7 +77,7 @@ export default class ScheduleController extends Repository<Schedule>{
       .andWhere('schedule.semesterId = :semesterId', { semesterId });
 
       if (startDate !== 'undefined' && endDate !== 'undefined') {
-        query = query.andWhere('schedule.date >= :startDate AND schedule.date <= :endDate', { startDate, endDate });
+        query = query.andWhere('schedule.date > :startDate AND schedule.date < :endDate', { startDate, endDate });
       }
 
       const schedules = await query.orderBy({ date: 'DESC' }).getMany();
