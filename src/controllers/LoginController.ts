@@ -28,7 +28,7 @@ export default class LoginController {
         if (isLogin) {
           const accessToken = jwt.sign({ id: account.id, name: account.name }, process.env.SECRET, { expiresIn: '30m' });
           res.cookie('hcmaid', accessToken, {
-            maxAge: 10 * 30 * 60 * 100,
+            maxAge: 10 * 60 * 60 * 100,
             // httpOnly: true,
             // secure: true,
           });
@@ -36,7 +36,7 @@ export default class LoginController {
           });
 
           res.cookie('role', account.role.name, {
-            maxAge: 10 * 30 * 60 * 100,
+            maxAge: 10 * 60 * 60 * 100,
           });
 
           return res.status(200).json({ id: account.id, name: account.name, role: account.role.name ,access_token: accessToken });

@@ -24,82 +24,89 @@ export default class UserController extends Repository<Account>{
     const offset = Number(req.query.offset) || 0;
     const classId = Number(req.query.classId);
 
-    const connection = await PostgresDb.getConnection();
-    const accountRepository = connection.getRepository(Account);
+    
 
-    switch (type) {
-      case 'students': {
-        let query = accountRepository.createQueryBuilder('account')
-          .leftJoin('account.role', 'role')
-          .leftJoinAndSelect('account.class', 'class')
-          .leftJoinAndSelect('account.institua', 'institua')
-          .where('role.name = :student', { student: 'student' });
-
-        if (classId) {
-          query = query.andWhere('class.id = :classId', { classId });
-        }
-        
-        if (searchName != 'undefined') {
-          query = query.andWhere(`LOWER(account.name) LIKE '%${searchName.toLowerCase().trim()}%'`);
-        }
-
-        const [students, count] = await query.orderBy('account.isActive', 'DESC')
-          .addOrderBy('account.classId', 'ASC')
-          .skip(offset)
-          .take(limit)
-          .getManyAndCount();
-
-        const results = students.map(student => ({
-          id: student.id,
-          msv: student.username,
-          name: student.name,
-          class: {
-            id: student.class.id,
-            name: student.class.name,
-          },
-          institua: student.institua.name,
-          address: student.address,
-          birthday: student.birthday,
-          gender: student.gender,
-          isActive: student.isActive,
-          email: student.email,
-        }));
-        return res.status(200).json({ totalPage: Math.ceil(count / (limit > 0 ? limit : count)), data: results });
-      }
-
-      case 'teachers': {
-        let query = accountRepository.createQueryBuilder('account')
-          .leftJoin('account.role', 'role')
-          .leftJoinAndSelect('account.class', 'class')
-          .leftJoinAndSelect('account.institua', 'institua')
-          .where('account.roleId = 2');
-      
-        if (searchName != 'undefined') {
-          query = query.andWhere(`LOWER(account.name) LIKE '%${searchName.toLowerCase().trim()}%'`);
-        }
-
-        const [teachers, count] = await query.orderBy('account.name', 'ASC').skip(offset).take(limit).getManyAndCount();
-
-        const results = teachers.map(teacher => ({
-            id: teacher.id,
-            name: teacher.name,
-            institua: {
-              id: teacher.institua.id,
-              name: teacher.institua.name,
-            },
-            email: teacher.email,
-            phone: teacher.phone,
-            address: teacher.address,
-            gender: teacher.gender,
-            birthday: teacher.birthday,
-        }));
-
-        return res.status(200).json({ totalPage:  Math.ceil(count / (limit > 0 ? limit : count)), data: results });
-      }
+    try {
+      const connection = await PostgresDb.getConnection();
+      const accountRepository = connection.getRepository(Account);
+      switch (type) {
+        case 'students': {
+          let query = accountRepository.createQueryBuilder('account')
+            .leftJoin('account.role', 'role')
+            .leftJoinAndSelect('account.class', 'class')
+            .leftJoinAndSelect('account.institua', 'institua')
+            .where('role.name = :student', { student: 'student' });
+  
+          if (classId) {
+            query = query.andWhere('class.id = :classId', { classId });
+          }
           
-      default:
-        return res.status(500);
+          if (searchName != 'undefined') {
+            query = query.andWhere(`LOWER(account.name) LIKE '%${searchName.toLowerCase().trim()}%'`);
+          }
+  
+          const [students, count] = await query.orderBy('account.isActive', 'DESC')
+            .addOrderBy('account.classId', 'ASC')
+            .skip(offset)
+            .take(limit)
+            .getManyAndCount();
+  
+          const results = students.map(student => ({
+            id: student.id,
+            msv: student.username,
+            name: student.name,
+            class: {
+              id: student.class.id,
+              name: student.class.name,
+            },
+            institua: student.institua?.name,
+            address: student.address,
+            birthday: student.birthday,
+            gender: student.gender,
+            isActive: student.isActive,
+            email: student.email,
+          }));
+          return res.status(200).json({ totalPage: Math.ceil(count / (limit > 0 ? limit : count)), data: results });
+        }
+  
+        case 'teachers': {
+          let query = accountRepository.createQueryBuilder('account')
+            .leftJoin('account.role', 'role')
+            .leftJoinAndSelect('account.class', 'class')
+            .leftJoinAndSelect('account.institua', 'institua')
+            .where('account.roleId = 2');
+        
+          if (searchName != 'undefined') {
+            query = query.andWhere(`LOWER(account.name) LIKE '%${searchName.toLowerCase().trim()}%'`);
+          }
+  
+          const [teachers, count] = await query.orderBy('account.name', 'ASC').skip(offset).take(limit).getManyAndCount();
+  
+          const results = teachers.map(teacher => ({
+              id: teacher.id,
+              name: teacher.name,
+              institua: {
+                id: teacher.institua?.id,
+                name: teacher.institua?.name,
+              },
+              email: teacher.email,
+              phone: teacher.phone,
+              address: teacher.address,
+              gender: teacher.gender,
+              birthday: teacher.birthday,
+          }));
+  
+          return res.status(200).json({ totalPage:  Math.ceil(count / (limit > 0 ? limit : count)), data: results });
+        }
+            
+        default:
+          return res.status(500);
+      }
+    } catch (error) {
+      console.log(error);
+      res.status(500).json(error);
     }
+    
   }
 
   public async createStudents(req: Request, res: Response) {
@@ -113,9 +120,10 @@ export default class UserController extends Repository<Account>{
       await connection.manager.transaction(async transactionManager => {
         const createdStudents = await BlueBird.map(data, async (account: any) => {
           const accountRepository = connection.getRepository(Account);
-          const shareAccount = await accountRepository.findOne({ username: account['Mã Học viên'] });
+          
+          const shareAccount = await accountRepository.findOne({ username: account['Tên người dùng'] });
           if (shareAccount) {
-            return res.status(400).json({ error: `Tài khoản '${account['Mã Học viên']}' đã tồn tại` });
+            return res.status(400).json({ error: `Tài khoản '${account['Tên người dùng']}' đã tồn tại` });
           }
 
           const classRepository = connection.getRepository(Class);
@@ -124,31 +132,34 @@ export default class UserController extends Repository<Account>{
             res.status(400).json({ error: 'Lớp không hợp lệ'});
           }
           
+          console.log(account['Mật khẩu']);
           const salt = await bcrypt.genSalt(Number(process.env.SALT_NUMBER));
-          const hashedPassword = await bcrypt.hash(account.msv, salt);
+          const hashedPassword = await bcrypt.hash(account['Mật khẩu'], salt);
 
-          const genders: { value: string; label: string; }[] = [{ value: 'male', label: 'Nam'}, { value: 'female', label: 'Nữ' }];
+          // const genders: { value: string; label: string; }[] = [{ value: 'male', label: 'Nam'}, { value: 'female', label: 'Nữ' }];
 
-          const formatDate = moment(account['Ngày sinh'], 'YYYY-MM-DD').format();
+          // const formatDate = moment(account['Ngày sinh'], 'YYYY-MM-DD').format();
 
           const student = new Account();
-          student.username = account['Mã Học viên'];
-          student.name = account['Họ và tên'];
-          student.address = account['Địa chỉ'];
-          student.email = account['Email'];
-          student.phone = account['Số điện thoại'];
+          student.username = account['Tên người dùng'];
+          student.name = account['Tên hiển thị'];
+          // student.address = account['Địa chỉ'];
+          student.email = account['Tên người dùng'];
+          // student.phone = account['Số điện thoại'];
           student.classId = classDb.id;
-          student.instituaId = classDb.instituaId;
+          // student.instituaId = classDb.instituaId;
           student.roleId = 1;
           student.password = hashedPassword;
-          student.birthday = moment(formatDate).toISOString();
-          student.gender = genders.find(gender => gender.label === account['Giới tính']).value as 'male' | 'female';
+          // student.birthday = moment(formatDate).toISOString();
+          // student.gender = genders.find(gender => gender.label === account['Giới tính']).value as 'male' | 'female';
 
           return await transactionManager.save(student);
         });
         fs.unlink(req.file.path, (err) => {
           if (err) return res.status(500).json({ error: 'Internal Server Error'});
         });
+
+        return createdStudents;
       });
 
       return res.status(201).json({ message: 'success' });
@@ -156,7 +167,7 @@ export default class UserController extends Repository<Account>{
       fs.unlink(req.file.path, (err) => {
         if (err) return res.status(500).json({ error: 'Internal Server Error' });
       });
-
+      console.log(error);
       return res.status(500).json({ error: error.message });
     }
   }
@@ -171,36 +182,36 @@ export default class UserController extends Repository<Account>{
       await connection.manager.transaction(async transactionManager => {
         const created = await BlueBird.map(data, async (account: any) => {
           const accountRepository = connection.getRepository(Account);
-            const shareAccount = await accountRepository.findOne({ username: account['Email'] });
+            const shareAccount = await accountRepository.findOne({ username: account['Tên người dùng'] });
             if (shareAccount) {
-              return res.status(400).json({ error: `Tài khoản '${account['Email']}' đã tồn tại` });
+              return res.status(400).json({ error: `Tài khoản '${account['Tên nguời dùng']}' đã tồn tại` });
             }
   
-          const instituaRepository = connection.getRepository(Institua);
-          const institua = await instituaRepository.findOne({ name: account['Đơn vị'] });
+          // const instituaRepository = connection.getRepository(Institua);
+          // const institua = await instituaRepository.findOne({ name: account['Đơn vị'] });
           
-          if (!institua) {
-            return res.status(400).json({ error: 'Đơn vị không hợp lệ'});
-          }
+          // if (!institua) {
+          //   return res.status(400).json({ error: 'Đơn vị không hợp lệ'});
+          // }
 
-          const genders: { value: string; label: string; }[] = [{ value: 'male', label: 'Nam'}, { value: 'female', label: 'Nữ' }];
+          // const genders: { value: string; label: string; }[] = [{ value: 'male', label: 'Nam'}, { value: 'female', label: 'Nữ' }];
           
           const salt = await bcrypt.genSalt(Number(process.env.SALT_NUMBER));
-          const hashedPassword = await bcrypt.hash(account.phone, salt);
+          const hashedPassword = await bcrypt.hash(account['Mật khẩu'], salt);
 
-          const formatDate = moment(account['Ngày sinh'], 'YYYY-MM-DD').format();
+          // const formatDate = moment(account['Ngày sinh'], 'YYYY-MM-DD').format();
 
           const teacher = new Account();
-          teacher.username = account['Email'];
-          teacher.name = account['Họ và tên'];
-          teacher.address = account['Địa chỉ'];
-          teacher.email = account['Email'];
-          teacher.phone = account['Số điện thoại'];
-          teacher.instituaId = institua.id;
+          teacher.username = account['Tên người dùng'];
+          teacher.name = account['Tên hiển thị'];
+          // teacher.address = account['Địa chỉ'];
+          teacher.email = account['Tên người dùng'];
+          // teacher.phone = account['Số điện thoại'];
+          // teacher.instituaId = institua.id;
           teacher.roleId = 2;
           teacher.password = hashedPassword;
-          teacher.birthday = moment(formatDate).toISOString();
-          teacher.gender = genders.find(gender => gender.label === account['Giới tính']).value as 'male' | 'female';
+          // teacher.birthday = moment(formatDate).toISOString();
+          // teacher.gender = genders.find(gender => gender.label === account['Giới tính']).value as 'male' | 'female';
 
           await transactionManager.save(teacher);
         });

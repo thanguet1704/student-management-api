@@ -50,6 +50,12 @@ app.use('/semesters', authMidlerware, semesterRoute);
 app.use('/instituas', authMidlerware, instituaRoute);
 app.use('/sendEmail', authMidlerware, AdminPermissionMiddleware , sendEmailRoute);
 
+app.all('/', (req, res) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "X-Requested-With");
+});
+
+
 app.listen(process.env.SERVER_PORT, () => {
   console.log(`server start on ${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`);
 });

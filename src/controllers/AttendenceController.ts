@@ -355,7 +355,7 @@ export default class AttendenceController extends Repository<Attendence>{
       .where({ roleId: 1, isActive: true })
       .andWhere('semester.id = :semesterId', { semesterId });
 
-    if (account.roleId === 3) {
+    if (account.roleId === 3 && !Number.isNaN(schoolYearId)) {
       query = query.andWhere('schoolYear.id = :schoolYearId', { schoolYearId })
     }
 
