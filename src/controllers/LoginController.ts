@@ -26,7 +26,7 @@ export default class LoginController {
         const isLogin = await bcrypt.compare(password, account.password);
 
         if (isLogin) {
-          const accessToken = jwt.sign({ id: account.id, name: account.name }, process.env.SECRET, { expiresIn: '30m' });
+          const accessToken = jwt.sign({ id: account.id, name: account.name }, process.env.SECRET, { expiresIn: '60m' });
           res.cookie('hcmaid', accessToken, {
             maxAge: 10 * 60 * 60 * 100,
             // httpOnly: true,

@@ -28,10 +28,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors({
-  origin: `http://${process.env.CORS_HOST}:${process.env.CORS_PORT}`,
-  credentials: true,
-}));
+app.use(cors());
 
 const loginController = new LoginController();
 const authController = new AuthController();
@@ -49,12 +46,6 @@ app.use('/classrooms', authMidlerware, AdminPermissionMiddleware, classroomRoute
 app.use('/semesters', authMidlerware, semesterRoute);
 app.use('/instituas', authMidlerware, instituaRoute);
 app.use('/sendEmail', authMidlerware, AdminPermissionMiddleware , sendEmailRoute);
-
-app.all('/', (req, res) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "X-Requested-With");
-});
-
 
 app.listen(process.env.SERVER_PORT, () => {
   console.log(`server start on ${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`);

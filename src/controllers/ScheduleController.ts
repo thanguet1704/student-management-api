@@ -115,7 +115,11 @@ export default class ScheduleController extends Repository<Schedule>{
       .innerJoinAndSelect('schedule.subjectSchedule', 'subjectSchedule')
       .innerJoinAndSelect('category.subject', 'subject')
       .innerJoinAndSelect('schedule.session', 'session')
-      .where({ semesterId, classId });
+      .where({ semesterId });
+
+    if (!Number.isNaN(classId)) {
+      query = query.andWhere('schedule.class_id = :classId', { classId });
+    }
 
     if (account.role.name === 'teacher') {
       query = query.andWhere('schedule.accountId = :accountId', { accountId: decoded.id });
